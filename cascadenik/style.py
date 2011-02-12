@@ -64,6 +64,8 @@ class numbers:
 class function_expression(str):
     pass
 
+
+
 # recognized properties
 
 properties = {
@@ -262,6 +264,24 @@ properties = {
     
     # resampling method
     'raster-scaling': ('fast', 'bilinear', 'bilinear8',),
+
+
+    #--------------- raster colorizer
+    
+    # colorizer default mode
+    # default linear
+    'raster-colorizer-default-mode' : ('linear', 'discrete', 'exact'),
+    
+    # colorizer default color
+    'raster-colorizer-default-color' : color,
+    
+    # colorizer epsilon
+    'raster-colorizer-epsilon' : float,
+    
+    # colorizer stop
+    #'raster-colorizer-stop'
+
+
 
     #--------------- markers symbolizer
 

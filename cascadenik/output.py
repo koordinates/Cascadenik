@@ -172,7 +172,7 @@ class PolygonSymbolizer:
         return sym
 
 class RasterSymbolizer:
-    def __init__(self, mode=None, opacity=None, scaling=None):
+    def __init__(self, mode=None, opacity=None, scaling=None, colorizer_default_mode=None, colorizer_default_color=None, colorizer_epsilon=None):
         assert opacity is None or type(opacity) in (int, float)
         assert mode is None or isinstance(mode, basestring)
         assert scaling is None or isinstance(scaling, basestring)
@@ -180,6 +180,10 @@ class RasterSymbolizer:
         self.mode = safe_str(mode)
         self.opacity = opacity or 1.0
         self.scaling = safe_str(scaling)
+        self.colorizer_default_mode = colorizer_default_mode;
+        self.colorizer_default_color = colorizer_default_color;
+        self.colorizer_epsilon = colorizer_epsilon;
+        self.has_colorizer = True;
 
     def __repr__(self):
         return 'Raster(%s, %s, %s)' % (self.mode, self.opacity, self.scaling)
@@ -189,6 +193,20 @@ class RasterSymbolizer:
         sym.opacity = self.opacity
         sym.mode = self.mode or sym.mode
         sym.scaling = self.scaling or sym.scaling
+
+        if(self.has_colorizer):
+            c = mapnik.RasterColorizer();
+            if(self.colorizer_default_mode is not None):
+                mode = {'linear':mapnik.COLORIZER_LINEAR, 'discrete':mapnik.COLORIZER_DISCRETE, 'exact':mapnik.COLORIZER_EXACT};
+                if(mode.has_key(self.colorizer_default_mode.lower())):
+                    c.default_mode = mode[self.colorizer_default_mode];
+            if(self.colorizer_default_color is not None):
+                c.default_color = mapnik.Color(str(self.colorizer_default_color));
+            if(self.colorizer_epsilon is not None):
+                c.epsilon = self.colorizer_epsilon;
+        
+            sym.colorizer = c;
+
 
         return sym
 
