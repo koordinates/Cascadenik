@@ -862,7 +862,10 @@ def get_raster_rules(declarations):
     """
     property_map = {'raster-opacity': 'opacity',
                     'raster-mode': 'mode',
-                    'raster-scaling': 'scaling'
+                    'raster-scaling': 'scaling',
+                    'raster-colorizer-default-mode' : 'colorizer_default_mode',
+                    'raster-colorizer-default-color' : 'colorizer_default_color',
+                    'raster-colorizer-epsilon' : 'colorizer_epsilon'
                     }
 
     property_names = property_map.keys()

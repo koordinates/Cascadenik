@@ -60,12 +60,12 @@ class numbers:
 # recognized properties
 
 properties = {
-    # 
+    #
     'display': ('map', 'none'),
 
     #--------------- map
 
-    # 
+    #
     'map-bgcolor': color_transparent,
 
     #--------------- polygon symbolizer
@@ -74,7 +74,7 @@ properties = {
     'polygon-fill': color,
 
     # gamma value affecting level of antialiases of polygon edges
-    # 0.0 - 1.0 (default 1.0 - fully antialiased) 
+    # 0.0 - 1.0 (default 1.0 - fully antialiased)
     'polygon-gamma': float,
 
     # 0.0 - 1.0 (default 1.0)
@@ -254,16 +254,34 @@ properties = {
     # raster transparency
     # 0.0 - 1.0 (default 1.0)
     'raster-opacity': float,
-    
+
     # Compositing/Merging effects with image below raster level
     # default normal
     'raster-mode': ('normal','grain_merge', 'grain_merge2',
                     'multiply', 'multiply2', 'divide', 'divide2',
                     'screen', 'hard_light'),
-    
+
     # resampling method
     'raster-scaling': ('fast', 'bilinear', 'bilinear8',),
-        
+
+
+    #--------------- raster colorizer
+
+    # colorizer default mode
+    # default linear
+    'raster-colorizer-default-mode' : ('linear', 'discrete', 'exact'),
+
+    # colorizer default color
+    'raster-colorizer-default-color' : color,
+
+    # colorizer epsilon
+    'raster-colorizer-epsilon' : float,
+
+    # colorizer stop
+    #'raster-colorizer-stop'
+
+
+
     #--------------- polygon pattern symbolizer
 
     # path to image file (default none)
@@ -300,19 +318,19 @@ properties = {
 
     #--------------- shield symbolizer
 
-    # 
+    #
     'shield-name': None, # (use selector for this)
 
-    # 
+    #
     'shield-face-name': str,
 
     # Fontset name
     'shield-fontset': str,
-    
-    # 
+
+    #
     'shield-size': int,
 
-    # 
+    #
     'shield-fill': color,
 
     # Minimum distance between repeated labels such as street names or shield symbols
@@ -323,7 +341,7 @@ properties = {
 
     # Horizontal spacing between characters (in pixels).
     'shield-character-spacing': int,
-    
+
     # Vertical spacing between lines of multiline shields (in pixels)
     'shield-line-spacing': int,
 
@@ -358,7 +376,7 @@ class Declaration:
 
     def __repr__(self):
         return u'%(selector)s { %(property)s: %(value)s }' % self.__dict__
-    
+
     def scaleBy(self, scale):
         self.selector = self.selector.scaledBy(scale)
         self.value = self.value.scaledBy(scale)
@@ -371,7 +389,7 @@ class Selector:
 
     def addElement(self, element):
         self.elements = tuple(list(self.elements) + [element])
-    
+
     def convertZoomTests(self, is_merc):
         """ Modify the tests on this selector to use mapnik-friendly
             scale-denominator instead of shorthand zoom.
@@ -403,7 +421,7 @@ class Selector:
             21: (100, 250),
             22: (50, 100),
            }
-        
+
         for test in self.elements[0].tests:
             if test.property == 'zoom':
                 if not is_merc:
@@ -433,7 +451,7 @@ class Selector:
         ids = sum(a.countIDs() for a in self.elements)
         non_ids = sum((a.countNames() - a.countIDs()) for a in self.elements)
         tests = sum(len(a.tests) for a in self.elements)
-        
+
         return (ids, non_ids, tests)
 
     def matches(self, tag, id, classes):
@@ -443,7 +461,7 @@ class Selector:
         unmatched_ids = [name[1:] for name in element.names if name.startswith('#')]
         unmatched_classes = [name[1:] for name in element.names if name.startswith('.')]
         unmatched_tags = [name for name in element.names if name is not '*' and not name.startswith('#') and not name.startswith('.')]
-        
+
         if tag and tag in unmatched_tags:
             unmatched_tags.remove(tag)
 
@@ -453,43 +471,43 @@ class Selector:
         for class_ in classes:
             if class_ in unmatched_classes:
                 unmatched_classes.remove(class_)
-        
+
         if unmatched_tags or unmatched_ids or unmatched_classes:
             return False
 
         else:
             return True
-    
+
     def isRanged(self):
         """
         """
         return bool(self.rangeTests())
-    
+
     def rangeTests(self):
         """
         """
         return [test for test in self.allTests() if test.isRanged()]
-    
+
     def isMapScaled(self):
         """
         """
         return bool(self.mapScaleTests())
-    
+
     def mapScaleTests(self):
         """
         """
         return [test for test in self.allTests() if test.isMapScaled()]
-    
+
     def allTests(self):
         """
         """
         tests = []
-        
+
         for test in self.elements[0].tests:
             tests.append(test)
 
         return tests
-    
+
     def inRange(self, value):
         """
         """
@@ -503,16 +521,16 @@ class Selector:
         """ Return a new Selector with scale denominators scaled by a number.
         """
         scaled = deepcopy(self)
-    
+
         for test in scaled.elements[0].tests:
             if type(test.value) in (int, float):
                 if test.property == 'scale-denominator':
                     test.value /= scale
                 elif test.property == 'zoom':
                     test.value += log(scale)/log(2)
-        
+
         return scaled
-    
+
     def __repr__(self):
         return u' '.join(repr(a) for a in self.elements)
 
@@ -532,22 +550,22 @@ class SelectorElement:
 
     def addName(self, name):
         self.names.append(str(name))
-    
+
     def addTest(self, test):
         self.tests.append(test)
 
     def countTests(self):
         return len(self.tests)
-    
+
     def countIDs(self):
         return len([n for n in self.names if n.startswith('#')])
-    
+
     def countNames(self):
         return len(self.names)
-    
+
     def countClasses(self):
         return len([n for n in self.names if n.startswith('.')])
-    
+
     def __repr__(self):
         return u''.join(self.names) + u''.join(repr(t) for t in self.tests)
 
@@ -578,35 +596,35 @@ class SelectorAttributeTest:
         """
         """
         return self.op in ('=', '!=') and not self.isRanged()
-    
+
     def inverse(self):
         """
-        
+
             TODO: define this for non-simple tests.
         """
         assert self.isSimple(), 'inverse() is only defined for simple tests'
-        
+
         if self.op == '=':
             return SelectorAttributeTest(self.property, '!=', self.value)
-        
+
         elif self.op == '!=':
             return SelectorAttributeTest(self.property, '=', self.value)
-    
+
     def isNumeric(self):
         """
         """
         return type(self.value) in (int, float)
-    
+
     def isRanged(self):
         """
         """
         return self.op in ('<', '<=', '>=', '>')
-    
+
     def isMapScaled(self):
         """
         """
         return self.property == 'scale-denominator'
-    
+
     def inRange(self, scale_denominator):
         """
         """
@@ -635,125 +653,125 @@ class SelectorAttributeTest:
         """ Given a collection of tests, return false if this test contradicts any of them.
         """
         # print '?', self, tests
-        
+
         for test in tests:
             if self.property == test.property:
                 if self.op == '=':
                     if test.op == '=' and self.value != test.value:
                         return False
-    
+
                     if test.op == '!=' and self.value == test.value:
                         return False
-    
+
                     if test.op == '<' and self.value >= test.value:
                         return False
-                
+
                     if test.op == '>' and self.value <= test.value:
                         return False
-                
+
                     if test.op == '<=' and self.value > test.value:
                         return False
-                
+
                     if test.op == '>=' and self.value < test.value:
                         return False
-            
+
                 if self.op == '!=':
                     if test.op == '=' and self.value == test.value:
                         return False
-    
+
                     if test.op == '!=':
                         pass
-    
+
                     if test.op == '<':
                         pass
-                
+
                     if test.op == '>':
                         pass
-                
+
                     if test.op == '<=' and self.value == test.value:
                         return False
-                
+
                     if test.op == '>=' and self.value == test.value:
                         return False
-            
+
                 if self.op == '<':
                     if test.op == '=' and self.value <= test.value:
                         return False
-    
+
                     if test.op == '!=':
                         return False
-    
+
                     if test.op == '<':
                         pass
-                
+
                     if test.op == '>' and self.value <= test.value:
                         return False
-                
+
                     if test.op == '<=':
                         pass
-                
+
                     if test.op == '>=' and self.value <= test.value:
                         return False
-            
+
                 if self.op == '>':
                     if test.op == '=' and self.value >= test.value:
                         return False
-    
+
                     if test.op == '!=':
                         return False
-    
+
                     if test.op == '<' and self.value >= test.value:
                         return False
-                
+
                     if test.op == '>':
                         pass
-                
+
                     if test.op == '<=' and self.value >= test.value:
                         return False
-                
+
                     if test.op == '>=':
                         pass
-            
+
                 if self.op == '<=':
                     if test.op == '=' and self.value < test.value:
                         return False
-    
+
                     if test.op == '!=' and self.value == test.value:
                         return False
-    
+
                     if test.op == '<':
                         pass
-                
+
                     if test.op == '>' and self.value <= test.value:
                         return False
-                
+
                     if test.op == '<=':
                         pass
-                
+
                     if test.op == '>=' and self.value < test.value:
                         return False
-            
+
                 if self.op == '>=':
                     if test.op == '=' and self.value > test.value:
                         return False
-    
+
                     if test.op == '!=' and self.value == test.value:
                         return False
-    
+
                     if test.op == '<' and self.value >= test.value:
                         return False
-                
+
                     if test.op == '>':
                         pass
-                
+
                     if test.op == '<=' and self.value > test.value:
                         return False
-                
+
                     if test.op == '>=':
                         pass
 
         return True
-    
+
     def rangeOpEdge(self):
         ops = {'<': operator.lt, '<=': operator.le, '=': operator.eq, '>=': operator.ge, '>': operator.gt}
         return ops[self.op], self.value
@@ -765,12 +783,12 @@ class Property:
     """
     def __init__(self, name):
         assert name in properties
-    
+
         self.name = name
 
     def group(self):
         return self.name.split('-')[0]
-    
+
     def __repr__(self):
         return self.name
 
@@ -786,17 +804,17 @@ class Value:
 
     def importance(self):
         return int(self.important)
-    
+
     def scaledBy(self, scale):
         """ Return a new Value scaled by a given number for ints and floats.
         """
         scaled = deepcopy(self)
-    
+
         if type(scaled.value) in (int, float):
             scaled.value *= scale
-        
+
         return scaled
-    
+
     def __repr__(self):
         return repr(self.value)
 
