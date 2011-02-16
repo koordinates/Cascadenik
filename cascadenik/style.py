@@ -23,11 +23,20 @@ class color_transparent(color):
     pass
 
 class color_rgba:
-    def __init__(self, r, g, b, a):
-        self.channels = r, g, b, a
+    def __init__(self, r, g, b, a, name=None):
+        if name == None:
+            self.channels = r, g, b, a
+            self.name = None
+        else:
+            self.name = name
+            self.channels = None
+
 
     def __repr__(self):
-        return '#%02x%02x%02x%02x' % self.channels
+        if(self.name == None):
+            return '#%02x%02x%02x%02x' % self.channels
+        else:
+            return self.name
 
     def __str__(self):
         return repr(self)
@@ -1211,23 +1220,29 @@ def postprocess_value(tokens, property, line=0, col=0):
         if tokens[0][0] != 'HASH':
             raise ParseException('Hash value only for property "%(property)s"' % locals(), line, col)
 
-        if not re.match(r'^#([0-9a-f]{1}){3,8}$', tokens[0][1], re.I):
+        
+        if re.match(r'^#([0-9a-f]{1}){3,8}$', tokens[0][1], re.I):
+            hex = tokens[0][1][1:]
+            
+            if len(hex) == 3:
+                hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2]
+            elif len(hex) == 4:
+                hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3]
+            
+            rgba = (0,0,0,0)
+            if len(hex) == 6:
+                rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], 0))
+            elif len(hex) == 8:
+                rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], hex[6:8]))            
+            
+            value = color_rgba(*rgba)
+
+        elif tokens[0][1][0] == '#':
+            value = color_rgba(None,None,None,None,tokens[0][1][1:])
+            
+        else:
             raise ParseException('Unrecognized color_rgba value for property "%(property)s"' % locals(), line, col)
 
-        hex = tokens[0][1][1:]
-        
-        if len(hex) == 3:
-            hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2]
-        elif len(hex) == 4:
-            hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3]
-        
-        rgba = (0,0,0,0)
-        if len(hex) == 6:
-            rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], 0))
-        elif len(hex) == 8:
-            rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], hex[6:8]))            
-        
-        value = color_rgba(*rgba)
         
 
     elif properties[property.name] is uri:
@@ -1323,23 +1338,28 @@ def postprocess_value(tokens, property, line=0, col=0):
     
             #if its the color
             elif token[0] == 'HASH':
-                if not re.match(r'^#([0-9a-f]{1}){3,8}$', token[1], re.I):
+                if re.match(r'^#([0-9a-f]{1}){3,8}$', token[1], re.I):
+                    hex = token[1][1:]
+                    
+                    if len(hex) == 3:
+                        hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2]
+                    elif len(hex) == 4:
+                        hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3]
+                    
+                    rgba = 0,0,0,0
+                    if len(hex) == 6:
+                        rgba =  ord(unhex(hex[0:2])),ord(unhex(hex[2:4])),ord(unhex(hex[4:6])),0
+                    elif len(hex) == 8:
+                        rgba =  ord(unhex(hex[0:2])),ord(unhex(hex[2:4])),ord(unhex(hex[4:6])),ord(unhex(hex[6:8]))
+                    
+                    c = rgba
+                    
+                elif token[1][0] == '#':
+                    c = token[1][1:]
+                    
+                else:
                     raise ParseException('Unrecognized color_rgba value for property "%(property)s"' % locals(), line, col)
         
-                hex = token[1][1:]
-                
-                if len(hex) == 3:
-                    hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2]
-                elif len(hex) == 4:
-                    hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3]
-                
-                rgba = 0,0,0,0
-                if len(hex) == 6:
-                    rgba =  ord(unhex(hex[0:2])),ord(unhex(hex[2:4])),ord(unhex(hex[4:6])),0
-                elif len(hex) == 8:
-                    rgba =  ord(unhex(hex[0:2])),ord(unhex(hex[2:4])),ord(unhex(hex[4:6])),ord(unhex(hex[6:8]))
-                
-                c = rgba
                 
                 
             #if its the mode
