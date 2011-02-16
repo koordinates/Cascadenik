@@ -660,6 +660,20 @@ def extract_declarations(map_el, dirs):
         rulesets = style.stylesheet_rulesets(styles, is_merc_projection(map_el.get('srs','')))
         declarations += style.rulesets_declarations(rulesets)
 
+
+    for dec in declarations:
+        if dec.property.name == 'raster-colorizer-stop':
+            newlevel = None
+            for sel in dec.selector.elements:
+                for test in sel.tests:
+                    if test.property == 'level':
+                        newlevel = test.value
+                        sel.tests.remove(test)
+            if newlevel != None:
+                for stop in dec.value.value.stops:
+                    stop['value'] = newlevel
+
+
     return declarations
 
 def fetch_embedded_or_remote_src(elem, dirs):
@@ -826,7 +840,11 @@ def filtered_property_declarations(declarations, property_names):
         # collect all the applicable declarations into a list of parameters and values
         for dec in declarations:
             if is_applicable_selector(dec.selector, filter):
-                rule[dec.property.name] = dec.value
+                if (dec.property.name == 'raster-colorizer-stop') and rule.has_key(dec.property.name):
+                    for stop in dec.value.value.stops:
+                        rule[dec.property.name].value.add_stop(stop['value'], stop['color'], stop['mode'])
+                else:
+                    rule[dec.property.name] = dec.value
 
         if rule:
             rules.append((filter, rule))
@@ -868,7 +886,8 @@ def get_raster_rules(declarations):
                     'raster-scaling': 'scaling',
                     'raster-colorizer-default-mode' : 'colorizer_default_mode',
                     'raster-colorizer-default-color' : 'colorizer_default_color',
-                    'raster-colorizer-epsilon' : 'colorizer_epsilon'
+                    'raster-colorizer-epsilon' : 'colorizer_epsilon',
+                    'raster-colorizer-stop' : 'colorizer_stop'
                     }
 
     property_names = property_map.keys()

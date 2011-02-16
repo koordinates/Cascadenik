@@ -172,7 +172,7 @@ class PolygonSymbolizer:
         return sym
 
 class RasterSymbolizer:
-    def __init__(self, mode=None, opacity=None, scaling=None, colorizer_default_mode=None, colorizer_default_color=None, colorizer_epsilon=None):
+    def __init__(self, mode=None, opacity=None, scaling=None, colorizer_default_mode=None, colorizer_default_color=None, colorizer_epsilon=None, colorizer_stop=None):
         assert opacity is None or type(opacity) in (int, float)
         assert mode is None or isinstance(mode, basestring)
         assert scaling is None or isinstance(scaling, basestring)
@@ -180,10 +180,15 @@ class RasterSymbolizer:
         self.mode = safe_str(mode)
         self.opacity = opacity or 1.0
         self.scaling = safe_str(scaling)
-        self.colorizer_default_mode = colorizer_default_mode;
-        self.colorizer_default_color = colorizer_default_color;
-        self.colorizer_epsilon = colorizer_epsilon;
-        self.has_colorizer = True;
+        self.colorizer_default_mode = colorizer_default_mode
+        self.colorizer_default_color = colorizer_default_color
+        self.colorizer_epsilon = colorizer_epsilon
+        self.colorizer_stop = colorizer_stop
+        if self.colorizer_stop != None:
+            self.has_colorizer = True
+        else:
+            self.has_colorizer = False
+            
 
     def __repr__(self):
         return 'Raster(%s, %s, %s)' % (self.mode, self.opacity, self.scaling)
@@ -204,6 +209,25 @@ class RasterSymbolizer:
                 c.default_color = mapnik.Color(str(self.colorizer_default_color));
             if(self.colorizer_epsilon is not None):
                 c.epsilon = self.colorizer_epsilon;
+        
+            self.colorizer_stop.sort()
+            for stop in self.colorizer_stop.stops:
+                mode = mapnik.COLORIZER_INHERIT
+                modeDict = {'linear':mapnik.COLORIZER_LINEAR, 'discrete':mapnik.COLORIZER_DISCRETE, 'exact':mapnik.COLORIZER_EXACT, 'inherit':mapnik.COLORIZER_INHERIT}
+                if(modeDict.has_key(stop['mode'])):
+                    mode = modeDict[stop['mode']]
+                
+                value = stop['value']
+                
+                if value != None:
+                    color = stop['color']
+                    if color != None:
+                        color = mapnik.Color(color[0],color[1],color[2],color[3])
+                    
+                    if color == None:
+                        c.add_stop(value, mode)
+                    else:
+                        c.add_stop(value, mode, color)
         
             sym.colorizer = c;
 

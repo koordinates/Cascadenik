@@ -22,6 +22,19 @@ class color:
 class color_transparent(color):
     pass
 
+class color_rgba:
+    def __init__(self, r, g, b, a):
+        self.channels = r, g, b, a
+
+    def __repr__(self):
+        return '#%02x%02x%02x%02x' % self.channels
+
+    def __str__(self):
+        return repr(self)
+
+    def __eq__(self, other):
+        return self.channels == other.channels
+
 class uri:
     def __init__(self, address):
         self.address = address
@@ -63,6 +76,46 @@ class numbers:
 
 class function_expression(str):
     pass
+
+class colorizer_stop:
+    def __init__(self):
+        self.stops = [];
+
+    def add_stop(self, value, color=None, mode=None):
+        self.stops.append( {'value':value, 'color':color, 'mode':mode} )
+        self.sort()
+
+    def sort(self):
+        a = [(stop['value'], i, stop) for i, stop in enumerate(self.stops)]
+        a.sort()
+        self.stops = [stop for value, i, stop in a];
+        
+        
+
+    def __repr__(self):
+        s = ''
+        for stop in self.stops:
+            v = stop['value']
+            c = stop['color']
+            m = stop['mode']
+            
+            s +='['
+            if v != None:
+                s += '%d' % v
+            if c != None:
+                s += ' #%02x%02x%02x%02x' % (stop['color'][0], stop['color'][1], stop['color'][2], stop['color'][3])
+            if m != None:
+                s += ' %s' % m
+            s +='] '
+                
+        
+        return s
+
+    def __str__(self):
+        return repr(self)
+
+    def __eq__(self, other):
+        return (self.stops == other.stops)
 
 
 
@@ -273,13 +326,13 @@ properties = {
     'raster-colorizer-default-mode' : ('linear', 'discrete', 'exact'),
     
     # colorizer default color
-    'raster-colorizer-default-color' : color,
+    'raster-colorizer-default-color' : color_rgba,
     
     # colorizer epsilon
     'raster-colorizer-epsilon' : float,
     
     # colorizer stop
-    #'raster-colorizer-stop'
+    'raster-colorizer-stop' : colorizer_stop,
 
 
 
@@ -1154,6 +1207,29 @@ def postprocess_value(tokens, property, line=0, col=0):
         
         value = color(*rgb)
 
+    elif properties[property.name] is color_rgba:
+        if tokens[0][0] != 'HASH':
+            raise ParseException('Hash value only for property "%(property)s"' % locals(), line, col)
+
+        if not re.match(r'^#([0-9a-f]{1}){3,8}$', tokens[0][1], re.I):
+            raise ParseException('Unrecognized color_rgba value for property "%(property)s"' % locals(), line, col)
+
+        hex = tokens[0][1][1:]
+        
+        if len(hex) == 3:
+            hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2]
+        elif len(hex) == 4:
+            hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3]
+        
+        rgba = (0,0,0,0)
+        if len(hex) == 6:
+            rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], 0))
+        elif len(hex) == 8:
+            rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], hex[6:8]))            
+        
+        value = color_rgba(*rgba)
+        
+
     elif properties[property.name] is uri:
         if tokens[0][0] != 'URI':
             raise ParseException('URI value only for property "%(property)s"' % locals(), line, col)
@@ -1216,5 +1292,70 @@ def postprocess_value(tokens, property, line=0, col=0):
             raise ParseException('Function value only for property "%(property)s"' % locals(), line, col)
 
         value = str(''.join([t[1] for t in tokens]))
+
+    elif properties[property.name] is colorizer_stop:
+        # strip the list down to just the parts we want
+        relevant_tokens = [token for token in tokens
+                           if token[0] == 'NUMBER' or token[0] == 'HASH' or token[0] == 'IDENT']
+
+        cs = colorizer_stop()
+        v = None
+        c = None
+        m = None
+        hadValue = False
+        
+        # iterate over tokens, every time after the first when we get a 'NUMBER', add a new stop using 
+        #  the collected information.
+        for (i, token) in enumerate(relevant_tokens):
+            #if its the value
+            if token[0] == 'NUMBER':
+                #if already had value, add a new stop and start again    
+                if hadValue:
+                    cs.add_stop(v,c,m)
+                    v = None
+                    c = None
+                    m = None
+                    hadValue = False
+                
+                v = float(token[1])
+                hadValue = True
+                    
+    
+            #if its the color
+            elif token[0] == 'HASH':
+                if not re.match(r'^#([0-9a-f]{1}){3,8}$', token[1], re.I):
+                    raise ParseException('Unrecognized color_rgba value for property "%(property)s"' % locals(), line, col)
+        
+                hex = token[1][1:]
+                
+                if len(hex) == 3:
+                    hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2]
+                elif len(hex) == 4:
+                    hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3]
+                
+                rgba = 0,0,0,0
+                if len(hex) == 6:
+                    rgba =  ord(unhex(hex[0:2])),ord(unhex(hex[2:4])),ord(unhex(hex[4:6])),0
+                elif len(hex) == 8:
+                    rgba =  ord(unhex(hex[0:2])),ord(unhex(hex[2:4])),ord(unhex(hex[4:6])),ord(unhex(hex[6:8]))
+                
+                c = rgba
+                
+                
+            #if its the mode
+            elif token[0] == 'IDENT':
+                if token[1] not in ('linear', 'discrete', 'exact', 'inherit'):
+                    raise ParseException('Unrecognized value for property "%(property)s"' % locals(), line, col)
+                m = str(token[1])
+               
+        #add the last item if hadValue or (mode or color). When level is specified by rule, we only get the value later on 
+        if hadValue or (m != None) or (c != None):
+            cs.add_stop(v,c,m)
+        
+#       raise ParseException('Value for property "%(property)s" should be a <number> [, color] [, "linear"|"discrete"|"exact"|"inherit"]' % locals(), line, col)
+
+        
+        value = cs
+
 
     return Value(value, important)
