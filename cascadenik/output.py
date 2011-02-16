@@ -221,7 +221,10 @@ class RasterSymbolizer:
                 if value != None:
                     color = stop['color']
                     if color != None:
-                        color = mapnik.Color(color[0],color[1],color[2],color[3])
+                        if type(color) == tuple:
+                            color = mapnik.Color(color[0],color[1],color[2],color[3])
+                        else:
+                            color = mapnik.Color(str(color))
                     
                     if color == None:
                         c.add_stop(value, mode)

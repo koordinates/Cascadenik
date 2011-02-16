@@ -19,11 +19,20 @@ class color_transparent(color):
     pass
 
 class color_rgba:
-    def __init__(self, r, g, b, a):
-        self.channels = r, g, b, a
+    def __init__(self, r, g, b, a, name=None):
+        if name == None:
+            self.channels = r, g, b, a
+            self.name = None
+        else:
+            self.name = name
+            self.channels = None
+
 
     def __repr__(self):
-        return '#%02x%02x%02x%02x' % self.channels
+        if(self.name == None):
+            return '#%02x%02x%02x%02x' % self.channels
+        else:
+            return self.name
 
     def __str__(self):
         return repr(self)
