@@ -184,10 +184,6 @@ class RasterSymbolizer:
         self.colorizer_default_color = colorizer_default_color
         self.colorizer_epsilon = colorizer_epsilon
         self.colorizer_stop = colorizer_stop
-        if self.colorizer_stop != None:
-            self.has_colorizer = True
-        else:
-            self.has_colorizer = False
             
 
     def __repr__(self):
@@ -199,7 +195,7 @@ class RasterSymbolizer:
         sym.mode = self.mode or sym.mode
         sym.scaling = self.scaling or sym.scaling
 
-        if(self.has_colorizer):
+        if(self.colorizer_stop != None):
             c = mapnik.RasterColorizer();
             if(self.colorizer_default_mode is not None):
                 mode = {'linear':mapnik.COLORIZER_LINEAR, 'discrete':mapnik.COLORIZER_DISCRETE, 'exact':mapnik.COLORIZER_EXACT};

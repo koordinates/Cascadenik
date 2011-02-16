@@ -660,7 +660,8 @@ def extract_declarations(map_el, dirs):
         rulesets = style.stylesheet_rulesets(styles, is_merc_projection(map_el.get('srs','')))
         declarations += style.rulesets_declarations(rulesets)
 
-
+    #If the declaration is for a colorizer-stop, remove any 'level' rules
+    # by putting the level value into the stop 
     for dec in declarations:
         if dec.property.name == 'raster-colorizer-stop':
             newlevel = None
@@ -840,9 +841,11 @@ def filtered_property_declarations(declarations, property_names):
         # collect all the applicable declarations into a list of parameters and values
         for dec in declarations:
             if is_applicable_selector(dec.selector, filter):
+                #merge together all the colorizer-stops in this declaration
                 if (dec.property.name == 'raster-colorizer-stop') and rule.has_key(dec.property.name):
                     for stop in dec.value.value.stops:
                         rule[dec.property.name].value.add_stop(stop['value'], stop['color'], stop['mode'])
+                #for other declarations, overwrite any previous values
                 else:
                     rule[dec.property.name] = dec.value
 
