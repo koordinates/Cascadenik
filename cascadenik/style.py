@@ -18,6 +18,19 @@ class color:
 class color_transparent(color):
     pass
 
+class color_rgba:
+    def __init__(self, r, g, b, a):
+        self.channels = r, g, b, a
+
+    def __repr__(self):
+        return '#%02x%02x%02x%02x' % self.channels
+
+    def __str__(self):
+        return repr(self)
+
+    def __eq__(self, other):
+        return self.channels == other.channels
+
 class uri:
     def __init__(self, address):
         self.address = address
@@ -56,6 +69,48 @@ class numbers:
 
     def __eq__(self, other):
         return self.values == other.values
+
+
+class colorizer_stop:
+    def __init__(self):
+        self.stops = [];
+
+    def add_stop(self, value, color=None, mode=None):
+        self.stops.append( {'value':value, 'color':color, 'mode':mode} )
+        self.sort()
+
+    def sort(self):
+        a = [(stop['value'], i, stop) for i, stop in enumerate(self.stops)]
+        a.sort()
+        self.stops = [stop for value, i, stop in a];
+
+
+
+    def __repr__(self):
+        s = ''
+        for stop in self.stops:
+            v = stop['value']
+            c = stop['color']
+            m = stop['mode']
+
+            s +='['
+            if v != None:
+                s += '%d' % v
+            if c != None:
+                s += ' #%02x%02x%02x%02x' % (stop['color'][0], stop['color'][1], stop['color'][2], stop['color'][3])
+            if m != None:
+                s += ' %s' % m
+            s +='] '
+
+
+        return s
+
+    def __str__(self):
+        return repr(self)
+
+    def __eq__(self, other):
+        return (self.stops == other.stops)
+
 
 # recognized properties
 
@@ -272,13 +327,13 @@ properties = {
     'raster-colorizer-default-mode' : ('linear', 'discrete', 'exact'),
 
     # colorizer default color
-    'raster-colorizer-default-color' : color,
+    'raster-colorizer-default-color' : color_rgba,
 
     # colorizer epsilon
     'raster-colorizer-epsilon' : float,
 
     # colorizer stop
-    #'raster-colorizer-stop'
+    'raster-colorizer-stop' : colorizer_stop,
 
 
 
