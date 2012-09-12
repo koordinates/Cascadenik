@@ -18,7 +18,7 @@ class color:
 class color_transparent(color):
     pass
 
-class color_rgba:
+class color_rgba(color):
     def __init__(self, r, g, b, a, name=None):
         if name == None:
             self.channels = r, g, b, a
@@ -27,18 +27,11 @@ class color_rgba:
             self.name = name
             self.channels = None
 
-
     def __repr__(self):
         if(self.name == None):
             return '#%02x%02x%02x%02x' % self.channels
         else:
             return self.name
-
-    def __str__(self):
-        return repr(self)
-
-    def __eq__(self, other):
-        return self.channels == other.channels
 
 class uri:
     def __init__(self, address):

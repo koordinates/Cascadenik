@@ -261,27 +261,29 @@ def postprocess_value(property, tokens, important, line, col):
         else:
             value = 'transparent'
 
-    elif properties[property.name] is color_rgba:
+    elif issubclass(properties[property.name], color):
         if tokens[0][0] != 'HASH':
             raise ParseException('Hash value only for property "%(property)s"' % locals(), line, col)
 
-        if not re.match(r'^#([0-9a-f]{1}){3,8}$', tokens[0][1], re.I):
+        if re.match(r'^#([0-9a-f]{1}){3,6,8}$', tokens[0][1], re.I):
+            hex = tokens[0][1][1:]
+
+            if len(hex) == 3:
+                hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2]
+            elif len(hex) == 4:
+                hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3]
+
+            rgba = (0,0,0,0)
+            if len(hex) == 6:
+                rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], 0))
+            elif len(hex) == 8:
+                rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], hex[6:8]))
+
+            value = color_rgba(*rgba)
+        elif tokens[0][1][0] == '#':
+            value = color_rgba(None,None,None,None,tokens[0][1][1:])
+        else:
             raise ParseException('Unrecognized color_rgba value for property "%(property)s"' % locals(), line, col)
-
-        hex = tokens[0][1][1:]
-
-        if len(hex) == 3:
-            hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2]
-        elif len(hex) == 4:
-            hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3]
-
-        rgba = (0,0,0,0)
-        if len(hex) == 6:
-            rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], 0))
-        elif len(hex) == 8:
-            rgba = (ord(unhex(h)) for h in (hex[0:2], hex[2:4], hex[4:6], hex[6:8]))
-
-        value = color_rgba(*rgba)
 
     elif properties[property.name] is uri:
         if tokens[0][0] != 'URI':
