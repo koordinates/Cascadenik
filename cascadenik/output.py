@@ -1,10 +1,20 @@
 import sys
+from re import sub
+from itertools import count
 from os import getcwd, chdir
 
 from . import style, mapnik, MAPNIK_VERSION
 
 def safe_str(s):
     return None if not s else unicode(s).encode('utf-8')
+
+def fontset_name(face_names):
+    return '-'.join([sub(r'\W', '_', name) for name in face_names])
+
+class OutputException(Exception):
+    """ Exception raised when an output error is encountered.
+    """
+    pass
 
 class Map:
     def __init__(self, srs=None, layers=None, background=None):
@@ -32,14 +42,15 @@ class Map:
             if self.background:
                 mmap.background = mapnik.Color(str(self.background))
             
-            ids = (i for i in xrange(1, 999999))
+            ids = count(1)
+            fontsets = dict()
             
             for layer in self.layers:
                 for style in layer.styles:
     
                     sty = mapnik.Style()
                     
-                    if MAPNIK_VERSION >= 20000:
+                    if MAPNIK_VERSION >= 200000:
                         sty.filter_mode = mapnik.filter_mode.FIRST
                     
                     for rule in style.rules:
@@ -52,7 +63,19 @@ class Map:
                             if not hasattr(symbolizer, 'to_mapnik'):
                                 continue
     
-                            sym = symbolizer.to_mapnik()
+                            if hasattr(symbolizer, 'get_fontset_name'):
+                                fontset_name = symbolizer.get_fontset_name()
+                            
+                                if fontset_name and fontset_name not in fontsets:
+                                    fontset = FontSet(symbolizer.face_name.values).to_mapnik()
+                                    mmap.append_fontset(fontset_name, fontset)
+                                    fontsets[fontset_name] = mmap.find_fontset(fontset_name)
+
+                                sym = symbolizer.to_mapnik(fontsets)
+                            
+                            else:
+                                sym = symbolizer.to_mapnik()
+                            
                             rul.symbols.append(sym)
                         sty.rules.append(rul)
                     mmap.append_style(style.name, sty)
@@ -279,6 +302,21 @@ class LineSymbolizer:
         
         return sym
 
+class FontSet:
+    def __init__(self, face_names):
+        self.faces = tuple(face_names)
+    
+    def to_mapnik(self):
+        if MAPNIK_VERSION >= 200101:
+            fontset = mapnik.FontSet(fontset_name(self.faces))
+        else:
+            fontset = mapnik.FontSet()
+        
+        for face in self.faces:
+            fontset.add_face_name(face)
+        
+        return fontset
+
 class TextSymbolizer:
     def __init__(self, name, face_name, size, color, wrap_width=None, \
         label_spacing=None, label_position_tolerance=None, max_char_angle_delta=None, \
@@ -289,7 +327,7 @@ class TextSymbolizer:
         justify_alignment=None, force_odd_labels=None):
 
         assert isinstance(name, basestring)
-        assert face_name is None or isinstance(face_name, basestring)
+        assert face_name is None or face_name.__class__ is style.strings
         assert fontset is None or isinstance(fontset, basestring)
         assert type(size) is int
         assert color.__class__ is style.color
@@ -312,7 +350,7 @@ class TextSymbolizer:
         assert face_name or fontset, "Must specify either face_name or fontset"
 
         self.name = safe_str(name)
-        self.face_name = safe_str(face_name) or ''
+        self.face_name = face_name
         self.fontset = safe_str(fontset)
         self.size = size
         self.color = color
@@ -340,66 +378,136 @@ class TextSymbolizer:
         self.anchor_dy = anchor_dy
 
     def __repr__(self):
-        return 'Text(%s, %s)' % (self.face_name, self.size)
+        return 'Text(%s, %s)' % (' '.join(self.face_name.values), self.size)
 
-    def to_mapnik(self):
-        if MAPNIK_VERSION >= 20000:
+    def get_fontset_name(self):
+        if len(self.face_name.values) > 1 and MAPNIK_VERSION < 200100:
+            # Mapnik only supports multiple font face names as of version 2.1
+            return None
+
+        if len(self.face_name.values) == 1:
+            return None
+        
+        return fontset_name(self.face_name.values)
+    
+    def to_mapnik(self, fontsets=None):
+        if MAPNIK_VERSION >= 200100:
+            convert_enums = {'uppercase': mapnik.text_transform.UPPERCASE,
+                             'lowercase': mapnik.text_transform.LOWERCASE}
+
+            if self.get_fontset_name() is not None:
+                sym = mapnik.TextSymbolizer(mapnik.Expression('[%s]' % self.name),
+                                            '', self.size,
+                                            mapnik.Color(str(self.color)))
+
+                sym.format.fontset = fontsets[self.get_fontset_name()]
+
+            else:
+                sym = mapnik.TextSymbolizer(mapnik.Expression('[%s]' % self.name),
+                                            self.face_name.values[0], self.size,
+                                            mapnik.Color(str(self.color)))
+
+        elif MAPNIK_VERSION >= 200000:
             convert_enums = {'uppercase': mapnik.text_transform.UPPERCASE,
                              'lowercase': mapnik.text_transform.LOWERCASE}
 
             sym = mapnik.TextSymbolizer(mapnik.Expression('[%s]' % self.name),
-                                        self.face_name, self.size,
+                                        self.face_name.values[0], self.size,
                                         mapnik.Color(str(self.color)))
         else:
             # note: these match css in Mapnik2
             convert_enums = {'uppercase': mapnik.text_convert.TOUPPER,
                              'lowercase': mapnik.text_convert.TOLOWER}
 
-            sym = mapnik.TextSymbolizer(self.name, self.face_name, self.size,
+            sym = mapnik.TextSymbolizer(self.name, self.face_name.values[0], self.size,
                                         mapnik.Color(str(self.color)))
 
-        sym.wrap_width = self.wrap_width or sym.wrap_width
-        sym.label_spacing = self.label_spacing or sym.label_spacing
-        sym.label_position_tolerance = self.label_position_tolerance or sym.label_position_tolerance
-        sym.max_char_angle_delta = self.max_char_angle_delta or sym.max_char_angle_delta
-        sym.halo_fill = mapnik.Color(str(self.halo_color)) if self.halo_color else sym.halo_fill
-        sym.halo_radius = self.halo_radius or sym.halo_radius
-        sym.character_spacing = self.character_spacing or sym.character_spacing
-        sym.line_spacing = self.line_spacing or sym.line_spacing
-        sym.avoid_edges = self.avoid_edges.value if self.avoid_edges else sym.avoid_edges
-        sym.force_odd_labels = self.force_odd_labels.value if self.force_odd_labels else sym.force_odd_labels
-        sym.minimum_distance = self.minimum_distance or sym.minimum_distance
-        sym.allow_overlap = self.allow_overlap.value if self.allow_overlap else sym.allow_overlap
+        if MAPNIK_VERSION >= 200100:
+            sym.properties.wrap_width = self.wrap_width or sym.properties.wrap_width
+            sym.properties.label_spacing = self.label_spacing or sym.properties.label_spacing
+            sym.properties.label_position_tolerance = self.label_position_tolerance or sym.properties.label_position_tolerance
+            sym.properties.maximum_angle_char_delta = self.max_char_angle_delta or sym.properties.maximum_angle_char_delta
 
-        if self.label_placement:
-            sym.label_placement = mapnik.label_placement.names.get(self.label_placement,mapnik.label_placement.POINT_PLACEMENT)
+            sym.format.halo_fill = mapnik.Color(str(self.halo_color)) if self.halo_color else sym.format.halo_fill
+            sym.format.halo_radius = self.halo_radius or sym.format.halo_radius
+            sym.format.character_spacing = self.character_spacing or sym.format.character_spacing
+            sym.format.line_spacing = self.line_spacing or sym.format.line_spacing
 
-        if self.text_transform and MAPNIK_VERSION >= 20000:
+            sym.properties.avoid_edges = self.avoid_edges.value if self.avoid_edges else sym.properties.avoid_edges
+            sym.properties.force_odd_labels = self.force_odd_labels.value if self.force_odd_labels else sym.properties.force_odd_labels
+            sym.properties.minimum_distance = self.minimum_distance or sym.properties.minimum_distance
+            sym.properties.allow_overlap = self.allow_overlap.value if self.allow_overlap else sym.properties.allow_overlap
+
+            if self.label_placement:
+                sym.properties.label_placement \
+                    = mapnik.label_placement.names.get(self.label_placement, mapnik.label_placement.POINT_PLACEMENT)
+    
+            if self.vertical_alignment:
+                # match the logic in load_map.cpp for conditionally applying vertical_alignment default
+                if self.dx > 0.0:
+                    default_vertical_alignment = mapnik.vertical_alignment.BOTTOM
+                elif self.dy < 0.0:
+                    default_vertical_alignment = mapnik.vertical_alignment.TOP
+                else:
+                    default_vertical_alignment = mapnik.vertical_alignment.MIDDLE
+                
+                sym.properties.vertical_alignment \
+                    = mapnik.vertical_alignment.names.get(self.vertical_alignment, default_vertical_alignment)
+    
+            if self.justify_alignment:
+                sym.properties.justify_alignment \
+                    = mapnik.justify_alignment.names.get(self.justify_alignment, mapnik.justify_alignment.MIDDLE)
+    
+        else:
+            sym.wrap_width = self.wrap_width or sym.wrap_width
+            sym.label_spacing = self.label_spacing or sym.label_spacing
+            sym.label_position_tolerance = self.label_position_tolerance or sym.label_position_tolerance
+            sym.max_char_angle_delta = self.max_char_angle_delta or sym.max_char_angle_delta
+
+            sym.halo_fill = mapnik.Color(str(self.halo_color)) if self.halo_color else sym.halo_fill
+            sym.halo_radius = self.halo_radius or sym.halo_radius
+            sym.character_spacing = self.character_spacing or sym.character_spacing
+            sym.line_spacing = self.line_spacing or sym.line_spacing
+
+            sym.avoid_edges = self.avoid_edges.value if self.avoid_edges else sym.avoid_edges
+            sym.force_odd_labels = self.force_odd_labels.value if self.force_odd_labels else sym.force_odd_labels
+            sym.minimum_distance = self.minimum_distance or sym.minimum_distance
+            sym.allow_overlap = self.allow_overlap.value if self.allow_overlap else sym.allow_overlap
+        
+            if self.label_placement:
+                sym.label_placement \
+                    = mapnik.label_placement.names.get(self.label_placement, mapnik.label_placement.POINT_PLACEMENT)
+    
+            if self.vertical_alignment:
+                # match the logic in load_map.cpp for conditionally applying vertical_alignment default
+                if self.dx > 0.0:
+                    default_vertical_alignment = mapnik.vertical_alignment.BOTTOM
+                elif self.dy < 0.0:
+                    default_vertical_alignment = mapnik.vertical_alignment.TOP
+                else:
+                    default_vertical_alignment = mapnik.vertical_alignment.MIDDLE
+                
+                sym.vertical_alignment \
+                    = mapnik.vertical_alignment.names.get(self.vertical_alignment, default_vertical_alignment)
+    
+            if self.justify_alignment:
+                sym.justify_alignment \
+                    = mapnik.justify_alignment.names.get(self.justify_alignment, mapnik.justify_alignment.MIDDLE)
+    
+        if self.text_transform and MAPNIK_VERSION >= 200000:
             sym.text_convert = convert_enums.get(self.text_transform, mapnik.text_transform.NONE)
         elif self.text_transform:
             # note-renamed in Mapnik2 to 'text_transform'
             sym.text_convert = convert_enums.get(self.text_transform, mapnik.text_convert.NONE)
-
-        if self.vertical_alignment:
-            # match the logic in load_map.cpp for conditionally applying vertical_alignment default
-            default_vertical_alignment = mapnik.vertical_alignment.MIDDLE
-            if self.dx > 0.0:
-                default_vertical_alignment = mapnik.vertical_alignment.BOTTOM
-            elif self.dy < 0.0:
-                default_vertical_alignment = mapnik.vertical_alignment.TOP
-            
-            sym.vertical_alignment = mapnik.vertical_alignment.names.get(self.vertical_alignment,
-                default_vertical_alignment)
-        if self.justify_alignment:
-            sym.justify_alignment = mapnik.justify_alignment.names.get(self.justify_alignment,
-              mapnik.justify_alignment.MIDDLE)
 
         if self.fontset:
         #    sym.fontset = str(self.fontset)
              # not viable via python
             sys.stderr.write('\nCascadenik debug: Warning, FontSets will be ignored as they are not yet supported in Mapnik via Python...\n')
         
-        if MAPNIK_VERSION >= 20000:
+        if MAPNIK_VERSION >= 200100:
+            sym.properties.displacement = (self.dx or 0.0, self.dy or 0.0)
+        elif MAPNIK_VERSION >= 200000:
             sym.displacement = (self.dx or 0.0, self.dy or 0.0)
         else:
             sym.displacement(self.dx or 0.0, self.dy or 0.0)
@@ -414,7 +522,7 @@ class ShieldSymbolizer:
         assert (face_name or fontset) and file
         
         assert isinstance(name, basestring)
-        assert face_name is None or isinstance(face_name, basestring)
+        assert face_name is None or face_name.__class__ is style.strings
         assert fontset is None or isinstance(fontset, basestring)
         assert size is None or type(size) is int
         assert width is None or type(width) is int
@@ -430,7 +538,7 @@ class ShieldSymbolizer:
         assert text_dy is None or type(text_dy) is int
 
         self.name = safe_str(name)
-        self.face_name = safe_str(face_name) or ''
+        self.face_name = face_name
         self.fontset = safe_str(fontset)
         self.size = size or 10
         self.file = safe_str(file)
@@ -447,18 +555,41 @@ class ShieldSymbolizer:
         self.text_dy = text_dy
 
     def __repr__(self):
-        return 'Shield(%s, %s, %s, %s)' % (self.name, self.face_name, self.size, self.file)
+        return 'Shield(%s, %s, %s, %s)' % (self.name, ' '.join(self.face_name.values), self.size, self.file)
 
-    def to_mapnik(self):
+    def get_fontset_name(self):
+        if len(self.face_name.values) > 1 and MAPNIK_VERSION < 200100:
+            raise OutputException("Mapnik only supports multiple font face names as of version 2.1")
+
+        if len(self.face_name.values) == 1:
+            return None
         
-        if MAPNIK_VERSION >= 20000:
+        return fontset_name(self.face_name.values)
+    
+    def to_mapnik(self, fontsets=None):
+        if MAPNIK_VERSION >= 200100:
+            if self.get_fontset_name() is not None:
+                sym = mapnik.ShieldSymbolizer(
+                        mapnik.Expression('[%s]' % self.name), '', self.size or 10, 
+                        mapnik.Color(str(self.color)) if self.color else mapnik.Color('black'), 
+                        mapnik.PathExpression(self.file))
+
+                sym.fontset = fontsets[self.get_fontset_name()]
+
+            else:
+                sym = mapnik.ShieldSymbolizer(
+                        mapnik.Expression('[%s]' % self.name), self.face_name.values[0], self.size or 10, 
+                        mapnik.Color(str(self.color)) if self.color else mapnik.Color('black'), 
+                        mapnik.PathExpression(self.file))
+
+        elif MAPNIK_VERSION >= 200000:
             sym = mapnik.ShieldSymbolizer(
-                    mapnik.Expression('[%s]' % self.name), self.face_name, self.size or 10, 
+                    mapnik.Expression('[%s]' % self.name), self.face_name.values[0], self.size or 10, 
                     mapnik.Color(str(self.color)) if self.color else mapnik.Color('black'), 
                     mapnik.PathExpression(self.file))
         else:
             sym = mapnik.ShieldSymbolizer(
-                    self.name, self.face_name, self.size or 10, 
+                    self.name, self.face_name.values[0], self.size or 10, 
                     mapnik.Color(str(self.color)) if self.color else mapnik.Color('black'), 
                     self.file, self.type, self.width, self.height)
 
@@ -471,7 +602,7 @@ class ShieldSymbolizer:
         if self.fontset:
             sym.fontset = self.fontset.value
         
-        if MAPNIK_VERSION >= 20000:
+        if MAPNIK_VERSION >= 200000:
             sym.displacement = (self.text_dx or 0, self.text_dy or 0)
         else:
             sym.displacement(self.text_dx or 0, self.text_dy or 0)
@@ -496,7 +627,7 @@ class BasePointSymbolizer(object):
     def to_mapnik(self):
         sym_class = getattr(mapnik, self.__class__.__name__)
         
-        if MAPNIK_VERSION >= 20000:
+        if MAPNIK_VERSION >= 200000:
             sym = sym_class(mapnik.PathExpression(self.file))
         else:
             sym = sym_class(self.file, self.type, self.width, self.height)

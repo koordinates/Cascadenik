@@ -1,6 +1,37 @@
 Cascadenik Changelog
 ====================
 
+Version 2.6.3, November 17, 2012
+
+ * Adjusted breakpoints in style.convertZoomTests() to follow mid-points of real scales.
+
+Version 2.6.2, November 17, 2012
+
+ * Fixed several broken unit tests by removing local dependency on data/test.shp.
+
+Version 2.6.1, November 17, 2012
+
+ * Fixed numerous Mapnik 2.1.0 deprecation warnings by version-checking in cascadenik.tests and cascadenik.output.
+
+Version 2.6.0, November 17, 2012
+
+ * Added `--style` option to cascadenik-compile.py for user-supplied local stylesheets.
+
+Version 2.5.2, October 2, 2012
+
+ * Changed expectations for multiple font names so that pre-2.1 versions of Mapnik no longer throw OutputException.
+
+Version 2.5.1, September 26, 2012
+
+ * Completed support for Mapnik FontSet to match correct XML serialization in Mapnik 2.1.1-pre.
+
+Version 2.5.0, September 14, 2012
+
+ * Added preliminary support for Mapnik FontSet.
+   Multiple fonts can now be used in stylesheets with `text-face-name`
+   and `shield-face-name` *but* XML serialization support is missing.
+   See also https://github.com/mapnik/mapnik/issues/1483.
+
 Version 2.4.3, June 16, 2012
 
  * Removed non-working PIL requirement from setup.py.

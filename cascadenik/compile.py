@@ -607,24 +607,38 @@ def is_merc_projection(srs):
 
     return True
 
-def extract_declarations(map_el, dirs, scale=1):
+def extract_declarations(map_el, dirs, scale=1, user_styles=[]):
     """ Given a Map element and directories object, remove and return a complete
         list of style declarations from any Stylesheet elements found within.
     """
-    declarations = []
+    styles = []
 
+    #
+    # First, look at all the stylesheets defined in the map itself.
+    #
     for stylesheet in map_el.findall('Stylesheet'):
         map_el.remove(stylesheet)
 
-        styles, mss_href = fetch_embedded_or_remote_src(stylesheet, dirs)
+        content, mss_href = fetch_embedded_or_remote_src(stylesheet, dirs)
 
-        if not styles:
-            continue
+        if content:
+            styles.append((content, mss_href))
 
+    #
+    # Second, look through the user-supplied styles for override rules.
+    #
+    for stylesheet in user_styles:
+        mss_href = urljoin(dirs.source.rstrip('/')+'/', stylesheet)
+        content = urllib.urlopen(mss_href).read().decode(DEFAULT_ENCODING)
+
+        styles.append((content, mss_href))
+
+    declarations = []
+
+    for (content, mss_href) in styles:
         is_merc = is_merc_projection(map_el.get('srs',''))
 
-        for declaration in stylesheet_declarations(styles, is_merc, scale):
-
+        for declaration in stylesheet_declarations(content, is_merc, scale):
             #
             # Change the value of each URI relative to the location
             # of the containing stylesheet. We generally just have
@@ -640,7 +654,7 @@ def extract_declarations(map_el, dirs, scale=1):
             declarations.append(declaration)
 
     #If the declaration is for a colorizer-stop, remove any 'level' rules
-    # by putting the level value into the stop 
+    # by putting the level value into the stop
     for dec in declarations:
         if dec.property.name == 'raster-colorizer-stop':
             newlevel = None
@@ -652,7 +666,6 @@ def extract_declarations(map_el, dirs, scale=1):
             if newlevel != None:
                 for stop in dec.value.value.stops:
                     stop['value'] = newlevel
-
 
     return declarations
 
@@ -1459,7 +1472,8 @@ def localize_file_datasource(file_href, dirs):
     else:
         return dirs.output_path(path)
 
-def compile(src, dirs, verbose=False, srs=None, datasources_cfg=None, scale=1):
+
+def compile(src, dirs, verbose=False, srs=None, datasources_cfg=None, user_styles=[], scale=1):
     """ Compile a Cascadenik MML file, returning a cascadenik.output.Map object.
 
         Parameters:
@@ -1486,6 +1500,11 @@ def compile(src, dirs, verbose=False, srs=None, datasources_cfg=None, scale=1):
             (i.e. postgis_dbname) defined in the map's canonical <DataSourcesConfig>
             entities.  This is most useful in development, whereby one redefines
             individual datasources, connection parameters, and/or local paths.
+
+          user_styles:
+            A optional list of files or URLs, that override styles defined in
+            the map source. These are evaluated in order, with declarations from
+            later styles overriding those from earlier styles.
 
           scale:
             Scale value for output map, 2 doubles the size for high-res displays.
@@ -1516,7 +1535,7 @@ def compile(src, dirs, verbose=False, srs=None, datasources_cfg=None, scale=1):
             map_el = doc.getroot()
 
     expand_source_declarations(map_el, dirs, datasources_cfg)
-    declarations = extract_declarations(map_el, dirs, scale)
+    declarations = extract_declarations(map_el, dirs, scale, user_styles)
 
     # a list of layers and a sequential ID generator
     layers, ids = [], (i for i in xrange(1, 999999))

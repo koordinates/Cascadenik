@@ -86,8 +86,6 @@ class colorizer_stop:
         a.sort()
         self.stops = [stop for value, i, stop in a];
 
-
-
     def __repr__(self):
         s = ''
         for stop in self.stops:
@@ -104,7 +102,6 @@ class colorizer_stop:
                 s += ' %s' % m
             s +='] '
 
-
         return s
 
     def __str__(self):
@@ -113,6 +110,19 @@ class colorizer_stop:
     def __eq__(self, other):
         return (self.stops == other.stops)
 
+
+class strings:
+    def __init__(self, *values):
+        self.values = values
+
+    def __repr__(self):
+        return ','.join(map(str, self.values))
+
+    def __str__(self):
+        return repr(self)
+
+    def __eq__(self, other):
+        return self.values == other.values
 
 # recognized properties
 
@@ -226,11 +236,9 @@ properties = {
     'text-justify-align': ('left','middle','right',),
     'text-transform': ('uppercase','lowercase',),
     'text-force-odd-labels':boolean,
-    # Font name
-    'text-face-name': str,
 
-    # Fontset name
-    'text-fontset': str,
+    # Font name
+    'text-face-name': strings,
 
     # Font size
     'text-size': int,
@@ -379,10 +387,7 @@ properties = {
     'shield-name': None, # (use selector for this)
 
     #
-    'shield-face-name': str,
-
-    # Fontset name
-    'shield-fontset': str,
+    'shield-face-name': strings,
 
     #
     'shield-size': int,
@@ -451,32 +456,35 @@ class Selector:
         """ Modify the tests on this selector to use mapnik-friendly
             scale-denominator instead of shorthand zoom.
         """
-        # somewhat-fudged values for mapniks' scale denominator at a range
-        # of zoom levels when using the Google/VEarth mercator projection.
+        #
+        # Midpoint values for spherical mercator scale denominators at a range
+        # of zoom levels, based on 96dpi values from Microsoft documentation.
+        # http://msdn.microsoft.com/en-us/library/bb259689.aspx
+        #
         zooms = {
-             0: (500000000, 1000000000),
-             1: (200000000, 500000000),
-             2: (100000000, 200000000),
-             3: (50000000, 100000000),
-             4: (25000000, 50000000),
-             5: (12500000, 25000000),
-             6: (6500000, 12500000),
-             7: (3000000, 6500000),
-             8: (1500000, 3000000),
-             9: (750000, 1500000),
-            10: (400000, 750000),
-            11: (200000, 400000),
-            12: (100000, 200000),
-            13: (50000, 100000),
-            14: (25000, 50000),
-            15: (12500, 25000),
-            16: (5000, 12500),
-            17: (2500, 5000),
-            18: (1000, 2500),
-            19: (500, 1000),
-            20: (250, 500),
-            21: (100, 250),
-            22: (50, 100),
+             0: (418365887, 836731773),
+             1: (209182943, 418365886),
+             2: (104591472, 209182943),
+             3: (52295736, 104591472),
+             4: (26147868, 52295736),
+             5: (13073934, 26147868),
+             6: (6536967, 13073934),
+             7: (3268484, 6536967),
+             8: (1634242, 3268484),
+             9: (817121, 1634242),
+            10: (408561, 817121),
+            11: (204280, 408561),
+            12: (102140, 204280),
+            13: (51070, 102140),
+            14: (25535, 51070),
+            15: (12768, 25535),
+            16: (6384, 12768),
+            17: (3192, 6384),
+            18: (1596, 3192),
+            19: (798, 1596),
+            20: (399, 798),
+            21: (200, 399),
+            22: (100, 200),
            }
 
         for test in self.elements[0].tests:

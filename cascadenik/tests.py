@@ -15,7 +15,7 @@ import unittest
 import tempfile
 import xml.etree.ElementTree
 
-from .style import color, numbers, boolean
+from .style import color, numbers, strings, boolean
 from .style import Property, Selector, SelectorElement, SelectorAttributeTest
 from .parse import ParseException, postprocess_value, stylesheet_declarations
 from .compile import tests_filter_combinations, Filter, selectors_tests
@@ -28,8 +28,6 @@ from .sources import DataSources
 from . import mapnik, MAPNIK_VERSION
 from . import output
     
-MAPNIK_AUTO_IMAGE_SUPPORT = (MAPNIK_VERSION >= 701)
-
 class ParseTests(unittest.TestCase):
     
     def testBadSelector1(self):
@@ -555,7 +553,7 @@ class SelectorParseTests(unittest.TestCase):
         text_rule_groups = get_text_rule_groups(declarations)
         
         self.assertEqual(str, type(text_rule_groups.keys()[0]))
-        self.assertEqual(str, type(text_rule_groups['CODE'][0].symbolizers[0].face_name))
+        self.assert_(isinstance(text_rule_groups['CODE'][0].symbolizers[0].face_name, strings))
         self.assertEqual(str, type(text_rule_groups['CODE'][0].symbolizers[0].label_placement))
 
 class FilterCombinationTests(unittest.TestCase):
@@ -808,28 +806,28 @@ class NestedRuleTests(unittest.TestCase):
         self.assertEqual(len(declarations), 11)
         
         for index in (1, 3, 5, 7, 9):
-            self.assertEqual(str(declarations[index].selector.elements[0])[:33], '#low[scale-denominator>=25000000]')
+            self.assertEqual(str(declarations[index].selector.elements[0])[:33], '#low[scale-denominator>=26147868]')
         
         for index in (2, 4, 6, 8, 10):
-            self.assertEqual(str(declarations[index].selector.elements[0])[:33], '#high[scale-denominator<25000000]')
+            self.assertEqual(str(declarations[index].selector.elements[0])[:33], '#high[scale-denominator<26147868]')
         
         for index in (1, 2):
             self.assertEqual(str(declarations[index].value.value), '#ffffff')
         
         for index in (3, 4):
-            self.assertEqual(str(declarations[index].selector.elements[0])[33:], '[scale-denominator>=500000000][scale-denominator<1000000000]')
+            self.assertEqual(str(declarations[index].selector.elements[0])[33:], '[scale-denominator>=418365887][scale-denominator<836731773]')
             self.assertEqual(str(declarations[index].value.value), '#000000')
         
         for index in (5, 6):
-            self.assertEqual(str(declarations[index].selector.elements[0])[33:], '[scale-denominator>=50000000][scale-denominator<100000000]')
+            self.assertEqual(str(declarations[index].selector.elements[0])[33:], '[scale-denominator>=52295736][scale-denominator<104591472]')
             self.assertEqual(str(declarations[index].value.value), '#333333')
         
         for index in (7, 8):
-            self.assertEqual(str(declarations[index].selector.elements[0])[33:], '[scale-denominator>=6500000][scale-denominator<12500000]')
+            self.assertEqual(str(declarations[index].selector.elements[0])[33:], '[scale-denominator>=6536967][scale-denominator<13073934]')
             self.assertEqual(str(declarations[index].value.value), '#666666')
         
         for index in (9, 10):
-            self.assertEqual(str(declarations[index].selector.elements[0])[33:], '[scale-denominator>=750000][scale-denominator<1500000]')
+            self.assertEqual(str(declarations[index].selector.elements[0])[33:], '[scale-denominator>=817121][scale-denominator<1634242]')
             self.assertEqual(str(declarations[index].value.value), '#999999')
 
 class AtVariableTests(unittest.TestCase):
@@ -1062,19 +1060,19 @@ class StyleRuleTests(unittest.TestCase):
         declarations = stylesheet_declarations(s, is_merc=True)
         rules = get_polygon_rules(declarations)
         
-        self.assertEqual(399999, rules[0].maxscale.value)
+        self.assertEqual(408560, rules[0].maxscale.value)
         self.assertEqual(color(0xCC, 0xCC, 0xCC), rules[0].symbolizers[0].color)
         self.assertEqual("[use] = 'cemetery'", rules[0].filter.text)
         
-        self.assertEqual(399999, rules[1].maxscale.value)
+        self.assertEqual(408560, rules[1].maxscale.value)
         self.assertEqual(color(0x66, 0xFF, 0x66), rules[1].symbolizers[0].color)
         self.assertEqual("[use] = 'park'", rules[1].filter.text)
     
-        self.assertEqual(400000, rules[2].minscale.value)
+        self.assertEqual(408561, rules[2].minscale.value)
         self.assertEqual(color(0x99, 0x99, 0x99), rules[2].symbolizers[0].color)
         self.assertEqual("[use] = 'cemetery'", rules[2].filter.text)
         
-        self.assertEqual(400000, rules[3].minscale.value)
+        self.assertEqual(408561, rules[3].minscale.value)
         self.assertEqual(color(0x00, 0xFF, 0x00), rules[3].symbolizers[0].color)
         self.assertEqual("[use] = 'park'", rules[3].filter.text)
 
@@ -1089,19 +1087,19 @@ class StyleRuleTests(unittest.TestCase):
         declarations = stylesheet_declarations(s, is_merc=True)
         rules = get_polygon_rules(declarations)
         
-        self.assertEqual(399999, rules[0].maxscale.value)
+        self.assertEqual(408560, rules[0].maxscale.value)
         self.assertEqual(color(0x00, 0xFF, 0x00), rules[0].symbolizers[0].color)
         self.assertEqual('[foo] < 1', rules[0].filter.text)
         
-        self.assertEqual(399999, rules[1].maxscale.value)
+        self.assertEqual(408560, rules[1].maxscale.value)
         self.assertEqual(color(0xFF, 0x00, 0x00), rules[1].symbolizers[0].color)
         self.assertEqual('[foo] > 1', rules[1].filter.text)
     
-        self.assertEqual(400000, rules[2].minscale.value)
+        self.assertEqual(408561, rules[2].minscale.value)
         self.assertEqual(color(0x00, 0x00, 0x00), rules[2].symbolizers[0].color)
         self.assertEqual('[foo] < 1', rules[2].filter.text)
         
-        self.assertEqual(400000, rules[3].minscale.value)
+        self.assertEqual(408561, rules[3].minscale.value)
         self.assertEqual(color(0x00, 0x00, 0xFF), rules[3].symbolizers[0].color)
         self.assertEqual('[foo] > 1', rules[3].filter.text)
 
@@ -1123,50 +1121,50 @@ class StyleRuleTests(unittest.TestCase):
 
         poly_rules = get_polygon_rules(declarations)
         
-        self.assertEqual(399999, poly_rules[0].maxscale.value)
+        self.assertEqual(408560, poly_rules[0].maxscale.value)
         self.assertEqual(color(0x00, 0xFF, 0x00), poly_rules[0].symbolizers[0].color)
         self.assertEqual('[foo] < 1', poly_rules[0].filter.text)
         
-        self.assertEqual(399999, poly_rules[1].maxscale.value)
+        self.assertEqual(408560, poly_rules[1].maxscale.value)
         self.assertEqual(color(0xFF, 0x00, 0x00), poly_rules[1].symbolizers[0].color)
         self.assertEqual('[foo] > 1', poly_rules[1].filter.text)
     
-        self.assertEqual(400000, poly_rules[2].minscale.value)
+        self.assertEqual(408561, poly_rules[2].minscale.value)
         self.assertEqual(color(0x00, 0x00, 0x00), poly_rules[2].symbolizers[0].color)
         self.assertEqual('[foo] < 1', poly_rules[2].filter.text)
         
-        self.assertEqual(400000, poly_rules[3].minscale.value)
+        self.assertEqual(408561, poly_rules[3].minscale.value)
         self.assertEqual(color(0x00, 0x00, 0xFF), poly_rules[3].symbolizers[0].color)
         self.assertEqual('[foo] > 1', poly_rules[3].filter.text)
         
         line_rules = get_line_rules(declarations)
 
-        self.assertEqual(399999, line_rules[0].maxscale.value)
+        self.assertEqual(408560, line_rules[0].maxscale.value)
         self.assertEqual(color(0x00, 0xFF, 0xFF), line_rules[0].symbolizers[0].color)
         self.assertEqual(2.0, line_rules[0].symbolizers[0].width)
         self.assertEqual('[foo] < 1', line_rules[0].filter.text)
         
-        self.assertEqual(399999, line_rules[1].maxscale.value)
+        self.assertEqual(408560, line_rules[1].maxscale.value)
         self.assertEqual(color(0xFF, 0x00, 0xFF), line_rules[1].symbolizers[0].color)
         self.assertEqual(2.0, line_rules[1].symbolizers[0].width)
         self.assertEqual('[foo] = 1', line_rules[1].filter.text)
     
-        self.assertEqual(399999, line_rules[2].maxscale.value)
+        self.assertEqual(408560, line_rules[2].maxscale.value)
         self.assertEqual(color(0xFF, 0xFF, 0x00), line_rules[2].symbolizers[0].color)
         self.assertEqual(2.0, line_rules[2].symbolizers[0].width)
         self.assertEqual('[foo] > 1', line_rules[2].filter.text)
     
-        self.assertEqual(400000, line_rules[3].minscale.value)
+        self.assertEqual(408561, line_rules[3].minscale.value)
         self.assertEqual(color(0x00, 0xFF, 0xFF), line_rules[3].symbolizers[0].color)
         self.assertEqual(1.0, line_rules[3].symbolizers[0].width)
         self.assertEqual('[foo] < 1', line_rules[3].filter.text)
         
-        self.assertEqual(400000, line_rules[4].minscale.value)
+        self.assertEqual(408561, line_rules[4].minscale.value)
         self.assertEqual(color(0xFF, 0x00, 0xFF), line_rules[4].symbolizers[0].color)
         self.assertEqual(1.0, line_rules[4].symbolizers[0].width)
         self.assertEqual('[foo] = 1', line_rules[4].filter.text)
         
-        self.assertEqual(400000, line_rules[5].minscale.value)
+        self.assertEqual(408561, line_rules[5].minscale.value)
         self.assertEqual(color(0xFF, 0xFF, 0x00), line_rules[5].symbolizers[0].color)
         self.assertEqual(1.0, line_rules[5].symbolizers[0].width)
         self.assertEqual('[foo] > 1', line_rules[5].filter.text)
@@ -1188,55 +1186,55 @@ class StyleRuleTests(unittest.TestCase):
         
         line_rules = get_line_rules(declarations)
 
-        self.assertEqual(399999, line_rules[0].maxscale.value)
+        self.assertEqual(408560, line_rules[0].maxscale.value)
         self.assertEqual(color(0x00, 0xFF, 0xFF), line_rules[0].symbolizers[0].color)
         self.assertEqual(2.0, line_rules[0].symbolizers[0].width)
         self.assertEqual('[foo] < 1', line_rules[0].filter.text)
         
-        self.assertEqual(399999, line_rules[1].maxscale.value)
+        self.assertEqual(408560, line_rules[1].maxscale.value)
         self.assertEqual(color(0xFF, 0x00, 0xFF), line_rules[1].symbolizers[0].color)
         self.assertEqual(2.0, line_rules[1].symbolizers[0].width)
         self.assertEqual('[foo] = 1', line_rules[1].filter.text)
     
-        self.assertEqual(399999, line_rules[2].maxscale.value)
+        self.assertEqual(408560, line_rules[2].maxscale.value)
         self.assertEqual(color(0xFF, 0xFF, 0x00), line_rules[2].symbolizers[0].color)
         self.assertEqual(2.0, line_rules[2].symbolizers[0].width)
         self.assertEqual('[foo] > 1', line_rules[2].filter.text)
     
-        self.assertEqual(400000, line_rules[3].minscale.value)
+        self.assertEqual(408561, line_rules[3].minscale.value)
         self.assertEqual(color(0x00, 0xFF, 0xFF), line_rules[3].symbolizers[0].color)
         self.assertEqual(1.0, line_rules[3].symbolizers[0].width)
         self.assertEqual('[foo] < 1', line_rules[3].filter.text)
         
-        self.assertEqual(400000, line_rules[4].minscale.value)
+        self.assertEqual(408561, line_rules[4].minscale.value)
         self.assertEqual(color(0xFF, 0x00, 0xFF), line_rules[4].symbolizers[0].color)
         self.assertEqual(1.0, line_rules[4].symbolizers[0].width)
         self.assertEqual('[foo] = 1', line_rules[4].filter.text)
         
-        self.assertEqual(400000, line_rules[5].minscale.value)
+        self.assertEqual(408561, line_rules[5].minscale.value)
         self.assertEqual(color(0xFF, 0xFF, 0x00), line_rules[5].symbolizers[0].color)
         self.assertEqual(1.0, line_rules[5].symbolizers[0].width)
         self.assertEqual('[foo] > 1', line_rules[5].filter.text)
         
         text_rule_groups = get_text_rule_groups(declarations)
         
-        self.assertEqual(399999, text_rule_groups['label'][0].maxscale.value)
-        self.assertEqual('Arial', text_rule_groups['label'][0].symbolizers[0].face_name)
+        self.assertEqual(408560, text_rule_groups['label'][0].maxscale.value)
+        self.assertEqual(strings('Arial'), text_rule_groups['label'][0].symbolizers[0].face_name)
         self.assertEqual(12, text_rule_groups['label'][0].symbolizers[0].size)
         self.assertEqual('[foo] < 1', text_rule_groups['label'][0].filter.text)
         
-        self.assertEqual(399999, text_rule_groups['label'][1].maxscale.value)
-        self.assertEqual('Helvetica', text_rule_groups['label'][1].symbolizers[0].face_name)
+        self.assertEqual(408560, text_rule_groups['label'][1].maxscale.value)
+        self.assertEqual(strings('Helvetica'), text_rule_groups['label'][1].symbolizers[0].face_name)
         self.assertEqual(12, text_rule_groups['label'][1].symbolizers[0].size)
         self.assertEqual('[foo] >= 1', text_rule_groups['label'][1].filter.text)
     
-        self.assertEqual(400000, text_rule_groups['label'][2].minscale.value)
-        self.assertEqual('Arial', text_rule_groups['label'][2].symbolizers[0].face_name)
+        self.assertEqual(408561, text_rule_groups['label'][2].minscale.value)
+        self.assertEqual(strings('Arial'), text_rule_groups['label'][2].symbolizers[0].face_name)
         self.assertEqual(10, text_rule_groups['label'][2].symbolizers[0].size)
         self.assertEqual('[foo] < 1', text_rule_groups['label'][2].filter.text)
         
-        self.assertEqual(400000, text_rule_groups['label'][3].minscale.value)
-        self.assertEqual('Helvetica', text_rule_groups['label'][3].symbolizers[0].face_name)
+        self.assertEqual(408561, text_rule_groups['label'][3].minscale.value)
+        self.assertEqual(strings('Helvetica'), text_rule_groups['label'][3].symbolizers[0].face_name)
         self.assertEqual(10, text_rule_groups['label'][3].symbolizers[0].size)
         self.assertEqual('[foo] >= 1', text_rule_groups['label'][3].filter.text)
 
@@ -1256,23 +1254,23 @@ class StyleRuleTests(unittest.TestCase):
         
         text_rule_groups = get_text_rule_groups(declarations)
         
-        self.assertEqual(399999, text_rule_groups['label'][0].maxscale.value)
-        self.assertEqual('Arial', text_rule_groups['label'][0].symbolizers[0].face_name)
+        self.assertEqual(408560, text_rule_groups['label'][0].maxscale.value)
+        self.assertEqual(strings('Arial'), text_rule_groups['label'][0].symbolizers[0].face_name)
         self.assertEqual(12, text_rule_groups['label'][0].symbolizers[0].size)
         self.assertEqual('[foo] < 1', text_rule_groups['label'][0].filter.text)
         
-        self.assertEqual(399999, text_rule_groups['label'][1].maxscale.value)
-        self.assertEqual('Helvetica', text_rule_groups['label'][1].symbolizers[0].face_name)
+        self.assertEqual(408560, text_rule_groups['label'][1].maxscale.value)
+        self.assertEqual(strings('Helvetica'), text_rule_groups['label'][1].symbolizers[0].face_name)
         self.assertEqual(12, text_rule_groups['label'][1].symbolizers[0].size)
         self.assertEqual('[foo] >= 1', text_rule_groups['label'][1].filter.text)
     
-        self.assertEqual(400000, text_rule_groups['label'][2].minscale.value)
-        self.assertEqual('Arial', text_rule_groups['label'][2].symbolizers[0].face_name)
+        self.assertEqual(408561, text_rule_groups['label'][2].minscale.value)
+        self.assertEqual(strings('Arial'), text_rule_groups['label'][2].symbolizers[0].face_name)
         self.assertEqual(10, text_rule_groups['label'][2].symbolizers[0].size)
         self.assertEqual('[foo] < 1', text_rule_groups['label'][2].filter.text)
         
-        self.assertEqual(400000, text_rule_groups['label'][3].minscale.value)
-        self.assertEqual('Helvetica', text_rule_groups['label'][3].symbolizers[0].face_name)
+        self.assertEqual(408561, text_rule_groups['label'][3].minscale.value)
+        self.assertEqual(strings('Helvetica'), text_rule_groups['label'][3].symbolizers[0].face_name)
         self.assertEqual(10, text_rule_groups['label'][3].symbolizers[0].size)
         self.assertEqual('[foo] >= 1', text_rule_groups['label'][3].filter.text)
         
@@ -1280,54 +1278,54 @@ class StyleRuleTests(unittest.TestCase):
         
         assert shield_rule_groups['label'][0].minscale is None
         assert shield_rule_groups['label'][0].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][0].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][0].symbolizers[0].face_name)
         self.assertEqual(12, shield_rule_groups['label'][0].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][0].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][0].symbolizers[0].height)
         self.assertEqual("not [bar] = 'baz' and not [bar] = 'quux' and [foo] <= 1", shield_rule_groups['label'][0].filter.text)
         
         assert shield_rule_groups['label'][1].minscale is None
         assert shield_rule_groups['label'][1].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][1].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][1].symbolizers[0].face_name)
         self.assertEqual(10, shield_rule_groups['label'][1].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][1].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][1].symbolizers[0].height)
         self.assertEqual("not [bar] = 'baz' and not [bar] = 'quux' and [foo] > 1", shield_rule_groups['label'][1].filter.text)
         
         assert shield_rule_groups['label'][2].minscale is None
         assert shield_rule_groups['label'][2].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][2].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][2].symbolizers[0].face_name)
         self.assertEqual(14, shield_rule_groups['label'][2].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][2].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][2].symbolizers[0].height)
         self.assertEqual("[bar] = 'baz' and [foo] <= 1", shield_rule_groups['label'][2].filter.text)
         
         assert shield_rule_groups['label'][3].minscale is None
         assert shield_rule_groups['label'][3].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][3].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][3].symbolizers[0].face_name)
         self.assertEqual(14, shield_rule_groups['label'][3].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][3].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][3].symbolizers[0].height)
         self.assertEqual("[bar] = 'baz' and [foo] > 1", shield_rule_groups['label'][3].filter.text)
         
         assert shield_rule_groups['label'][4].minscale is None
         assert shield_rule_groups['label'][4].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][4].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][4].symbolizers[0].face_name)
         self.assertEqual(16, shield_rule_groups['label'][4].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][4].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][4].symbolizers[0].height)
         self.assertEqual("[bar] = 'quux' and [foo] <= 1", shield_rule_groups['label'][4].filter.text)
         
         assert shield_rule_groups['label'][5].minscale is None
         assert shield_rule_groups['label'][5].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][5].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][5].symbolizers[0].face_name)
         self.assertEqual(16, shield_rule_groups['label'][5].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][5].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][5].symbolizers[0].height)
         self.assertEqual("[bar] = 'quux' and [foo] > 1", shield_rule_groups['label'][5].filter.text)
@@ -1348,54 +1346,54 @@ class StyleRuleTests(unittest.TestCase):
         
         assert shield_rule_groups['label'][0].minscale is None
         assert shield_rule_groups['label'][0].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][0].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][0].symbolizers[0].face_name)
         self.assertEqual(12, shield_rule_groups['label'][0].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][0].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][0].symbolizers[0].height)
         self.assertEqual("not [bar] = 'baz' and not [bar] = 'quux' and [foo] <= 1", shield_rule_groups['label'][0].filter.text)
         
         assert shield_rule_groups['label'][1].minscale is None
         assert shield_rule_groups['label'][1].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][1].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][1].symbolizers[0].face_name)
         self.assertEqual(10, shield_rule_groups['label'][1].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][1].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][1].symbolizers[0].height)
         self.assertEqual("not [bar] = 'baz' and not [bar] = 'quux' and [foo] > 1", shield_rule_groups['label'][1].filter.text)
         
         assert shield_rule_groups['label'][2].minscale is None
         assert shield_rule_groups['label'][2].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][2].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][2].symbolizers[0].face_name)
         self.assertEqual(14, shield_rule_groups['label'][2].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][2].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][2].symbolizers[0].height)
         self.assertEqual("[bar] = 'baz' and [foo] <= 1", shield_rule_groups['label'][2].filter.text)
         
         assert shield_rule_groups['label'][3].minscale is None
         assert shield_rule_groups['label'][3].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][3].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][3].symbolizers[0].face_name)
         self.assertEqual(14, shield_rule_groups['label'][3].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][3].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][3].symbolizers[0].height)
         self.assertEqual("[bar] = 'baz' and [foo] > 1", shield_rule_groups['label'][3].filter.text)
         
         assert shield_rule_groups['label'][4].minscale is None
         assert shield_rule_groups['label'][4].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][4].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][4].symbolizers[0].face_name)
         self.assertEqual(16, shield_rule_groups['label'][4].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][4].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][4].symbolizers[0].height)
         self.assertEqual("[bar] = 'quux' and [foo] <= 1", shield_rule_groups['label'][4].filter.text)
         
         assert shield_rule_groups['label'][5].minscale is None
         assert shield_rule_groups['label'][5].maxscale is None
-        self.assertEqual('Helvetica', shield_rule_groups['label'][5].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), shield_rule_groups['label'][5].symbolizers[0].face_name)
         self.assertEqual(16, shield_rule_groups['label'][5].symbolizers[0].size)
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual(8, shield_rule_groups['label'][5].symbolizers[0].width)
             self.assertEqual(8, shield_rule_groups['label'][5].symbolizers[0].height)
         self.assertEqual("[bar] = 'quux' and [foo] > 1", shield_rule_groups['label'][5].filter.text)
@@ -1405,7 +1403,7 @@ class StyleRuleTests(unittest.TestCase):
         assert point_rules[0].filter is None
         assert point_rules[0].minscale is None
         assert point_rules[0].maxscale is None
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual('png', point_rules[0].symbolizers[0].type)
             self.assertEqual(8, point_rules[0].symbolizers[0].width)
             self.assertEqual(8, point_rules[0].symbolizers[0].height)
@@ -1424,7 +1422,7 @@ class StyleRuleTests(unittest.TestCase):
         assert point_rules[0].filter is None
         assert point_rules[0].minscale is None
         assert point_rules[0].maxscale is None
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual('png', point_rules[0].symbolizers[0].type)
             self.assertEqual(8, point_rules[0].symbolizers[0].width)
             self.assertEqual(8, point_rules[0].symbolizers[0].height)
@@ -1434,7 +1432,7 @@ class StyleRuleTests(unittest.TestCase):
         assert polygon_pattern_rules[0].filter is None
         assert polygon_pattern_rules[0].minscale is None
         assert polygon_pattern_rules[0].maxscale is None
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual('png', polygon_pattern_rules[0].symbolizers[0].type)
             self.assertEqual(8, polygon_pattern_rules[0].symbolizers[0].width)
             self.assertEqual(8, polygon_pattern_rules[0].symbolizers[0].height)
@@ -1444,7 +1442,7 @@ class StyleRuleTests(unittest.TestCase):
         assert line_pattern_rules[0].filter is None
         assert line_pattern_rules[0].minscale is None
         assert line_pattern_rules[0].maxscale is None
-        if not MAPNIK_AUTO_IMAGE_SUPPORT:
+        if MAPNIK_VERSION < 701:
             self.assertEqual('png', line_pattern_rules[0].symbolizers[0].type)
             self.assertEqual(8, line_pattern_rules[0].symbolizers[0].width)
             self.assertEqual(8, line_pattern_rules[0].symbolizers[0].height)
@@ -1655,8 +1653,8 @@ class StyleRuleTests(unittest.TestCase):
 
         text_rule_groups = get_text_rule_groups(declarations)
         
-        self.assertEqual('Helvetica', text_rule_groups['label'][0].symbolizers[0].face_name)
-        self.assertEqual('Helvetica', text_rule_groups['label'][0].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), text_rule_groups['label'][0].symbolizers[0].face_name)
+        self.assertEqual(strings('Helvetica'), text_rule_groups['label'][0].symbolizers[0].face_name)
         self.assertEqual(12, text_rule_groups['label'][0].symbolizers[0].size)
 
         self.assertEqual(color(0xFF, 0x00, 0x00), text_rule_groups['label'][0].symbolizers[0].color)
@@ -1677,16 +1675,13 @@ class StyleRuleTests(unittest.TestCase):
         s = """
             Layer label1
             {
-                text-face-name: 'Helvetica';
-                text-fontset: 'bananas';
-
+                text-face-name: 'Bananas';
                 text-size: 12;
                 text-fill: #f00;
             }
             Layer label2
             {
-                text-fontset: "monkeys";
-
+                text-face-name: "Monkeys";
                 text-size: 12;
                 text-fill: #f00;
             }
@@ -1696,11 +1691,8 @@ class StyleRuleTests(unittest.TestCase):
 
         text_rule_groups = get_text_rule_groups(declarations)
         
-        self.assertEqual('Helvetica', text_rule_groups['label1'][0].symbolizers[0].face_name)
-        self.assertEqual('bananas', text_rule_groups['label1'][0].symbolizers[0].fontset)
-
-        self.assertEqual('', text_rule_groups['label2'][0].symbolizers[0].face_name)
-        self.assertEqual('monkeys', text_rule_groups['label2'][0].symbolizers[0].fontset)
+        self.assertEqual(strings('Bananas'), text_rule_groups['label1'][0].symbolizers[0].face_name)
+        self.assertEqual(strings('Monkeys'), text_rule_groups['label2'][0].symbolizers[0].face_name)
 
     def testStyleRules13(self):
         s = """
@@ -1752,7 +1744,7 @@ class StyleRuleTests(unittest.TestCase):
 
             Layer both
             {
-                shield-fontset: 'SuperFonts';
+                shield-face-name: 'Interstate';
                 shield-size: 12;
                 
                 shield-file: url('http://cascadenik-sampledata.s3.amazonaws.com/purple-point.png');
@@ -1776,8 +1768,7 @@ class StyleRuleTests(unittest.TestCase):
         #self.assertEqual(16, shield_rule_groups['just_image'][0].symbolizers[0].height)
         #self.assertEqual(5, shield_rule_groups['just_image'][0].symbolizers[0].minimum_distance)
         
-        self.assertEqual('', shield_rule_groups['both'][0].symbolizers[0].face_name)
-        self.assertEqual('SuperFonts', shield_rule_groups['both'][0].symbolizers[0].fontset)
+        self.assertEqual(strings('Interstate'), shield_rule_groups['both'][0].symbolizers[0].face_name)
         self.assertEqual(12, shield_rule_groups['both'][0].symbolizers[0].size)
         self.assertEqual(color(0xFF, 0x00, 0x00), shield_rule_groups['both'][0].symbolizers[0].color)
         self.assertEqual(16, shield_rule_groups['both'][0].symbolizers[0].width)
@@ -1885,11 +1876,21 @@ class CompileXMLTests(unittest.TestCase):
     def setUp(self):
         # a directory for all the temp files to be created below
         self.tmpdir = tempfile.mkdtemp(prefix='cascadenik-tests-')
+        self.data = tempfile.mkdtemp(prefix='cascadenik-data-')
         self.dirs = Directories(self.tmpdir, self.tmpdir, os.getcwd())
-
+        
+        for name in ('test.dbf', 'test.prj', 'test.qpj', 'test.shp', 'test.shx'):
+            href = 'http://cascadenik-sampledata.s3.amazonaws.com/data/' + name
+            path = os.path.join(self.data, name)
+            
+            file = open(path, 'w')
+            file.write(urllib.urlopen(href).read())
+            file.close()
+        
     def tearDown(self):
         # destroy the above-created directory
         shutil.rmtree(self.tmpdir)
+        shutil.rmtree(self.data)
 
     def testCompile1(self):
         """
@@ -2017,7 +2018,7 @@ layer_srs=%(other_srs)s
         self.assertEqual(1, len(map.layers[0].styles[2].rules))
         self.assertEqual(1, len(map.layers[0].styles[2].rules[0].symbolizers))
 
-        self.assertEqual('Comic Sans', map.layers[0].styles[2].rules[0].symbolizers[0].face_name)
+        self.assertEqual(strings('Comic Sans'), map.layers[0].styles[2].rules[0].symbolizers[0].face_name)
         self.assertEqual(14, map.layers[0].styles[2].rules[0].symbolizers[0].size)
 
         self.assertEqual(map.layers[0].srs, '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
@@ -2059,11 +2060,12 @@ layer_srs=%(other_srs)s
                 <Layer>
                     <Datasource base="template">
                         <Parameter name="type">shape</Parameter>
-                        <Parameter name="file">data/test.shp</Parameter>
+                        <Parameter name="file">%(data)s/test.shp</Parameter>
                     </Datasource>
                 </Layer>
             </Map>
-        """
+        """ % self.__dict__
+
         map = compile(s, self.dirs)
         
         mmap = mapnik.Map(640, 480)
@@ -2099,7 +2101,7 @@ layer_srs=%(other_srs)s
         self.assertEqual(len(map_el.find("Layer").findall('Datasource')), 1)
         params = dict(((p.get('name'), p.text) for p in map_el.find('Layer').find('Datasource').findall('Parameter')))
         self.assertEqual(params['type'], 'shape')
-        self.assertEqual(params['file'][-13:], 'data/test.shp')
+        self.assertTrue(params['file'].endswith('%s/test.shp' % self.data))
         self.assertEqual(params['encoding'], 'latin1')
 
     def testCompile3(self):
@@ -2107,7 +2109,7 @@ layer_srs=%(other_srs)s
         """
         map = output.Map(layers=[
             output.Layer('this',
-            output.Datasource(type="shape",file="data/test.shp"), [
+            output.Datasource(type="shape",file="%s/test.shp" % self.data), [
                 output.Style('a style', [
                     output.Rule(
                         output.MinScaleDenominator(1),
@@ -2119,7 +2121,7 @@ layer_srs=%(other_srs)s
                     ])
                 ]),
             output.Layer('that',
-            output.Datasource(type="shape",file="data/test.shp"), [
+            output.Datasource(type="shape",file="%s/test.shp" % self.data), [
                 output.Style('another style', [
                     output.Rule(
                         output.MinScaleDenominator(101),
@@ -2227,11 +2229,12 @@ layer_srs=%(other_srs)s
                 <Layer>
                     <Datasource base="template">
                         <Parameter name="type">shape</Parameter>
-                        <Parameter name="file">data/test.shp</Parameter>
+                        <Parameter name="file">%(data)s/test.shp</Parameter>
                     </Datasource>
                 </Layer>
             </Map>
-        """
+        """ % self.__dict__
+
         mmap = mapnik.Map(640, 480)
         ms = compile(s, self.dirs)
         ms.to_mapnik(mmap, self.dirs)
@@ -2246,11 +2249,12 @@ layer_srs=%(other_srs)s
                 <Layer>
                     <Datasource>
                         <Parameter name="type">shape</Parameter>
-                        <Parameter name="file">data/test.shp</Parameter>
+                        <Parameter name="file">%(data)s/test.shp</Parameter>
                     </Datasource>
                 </Layer>
             </Map>
-        """.encode('utf-8')
+        """.encode('utf-8') % self.__dict__
+
         mmap = mapnik.Map(640, 480)
         ms = compile(s, self.dirs)
         ms.to_mapnik(mmap, self.dirs)
@@ -2271,7 +2275,6 @@ layer_srs=%(other_srs)s
                 text-dy: 15;
                 text-face-name: 'Helvetica';
                 text-fill: #f00;
-                text-fontset: 'nanas';
                 text-force-odd-labels: true;
                 text-halo-fill: #ff0;
                 text-halo-radius: 2;
@@ -2298,40 +2301,47 @@ layer_srs=%(other_srs)s
         text_rule_groups = get_text_rule_groups(declarations)
         sym = text_rule_groups['NAME'][0].symbolizers[0].to_mapnik()
         
-        if MAPNIK_VERSION >= 20000:
-            self.assertEqual((10, 15), sym.displacement)
+        if MAPNIK_VERSION >= 200000:
+            self.assertEqual((10, 15), sym.properties.displacement if (MAPNIK_VERSION >= 200100) else sym.displacement)
         else:
             self.assertEqual([10, 15], sym.get_displacement())
         
         # todo - anchor (does not do anything yet in mapnik, but likely will)
         # and is not set in xml, but accepted in python
         #self.assertEqual([0,5], sym.get_anchor())
-        self.assertEqual(True, sym.allow_overlap)
-        self.assertEqual(True, sym.avoid_edges)
-        self.assertEqual(10, sym.character_spacing)
-        self.assertEqual('Helvetica', sym.face_name)
-        self.assertEqual(mapnik.Color("#f00"), sym.fill)
-        # todo - not exposed in python
-        #self.assertEqual('nanas', sym.fontset)
+        self.assertEqual(True, sym.properties.allow_overlap if (MAPNIK_VERSION >= 200100) else sym.allow_overlap)
+        self.assertEqual(True, sym.properties.avoid_edges if (MAPNIK_VERSION >= 200100) else sym.avoid_edges)
+        self.assertEqual(10, sym.format.character_spacing if (MAPNIK_VERSION >= 200100) else sym.character_spacing)
+        self.assertEqual('Helvetica', sym.format.face_name if (MAPNIK_VERSION >= 200100) else sym.face_name)
+        self.assertEqual(mapnik.Color("#f00"), sym.format.fill if (MAPNIK_VERSION >= 200100) else sym.fill)
         
-        self.assertEqual(True, sym.force_odd_labels)
-        self.assertEqual(mapnik.justify_alignment.LEFT, sym.justify_alignment)
-        self.assertEqual(mapnik.Color("#ff0"), sym.halo_fill)
-        self.assertEqual(2, sym.halo_radius)
+        self.assertEqual(True, sym.properties.force_odd_labels if (MAPNIK_VERSION >= 200100) else sym.force_odd_labels)
+        self.assertEqual(mapnik.justify_alignment.LEFT, sym.properties.justify_alignment if (MAPNIK_VERSION >= 200100) else sym.justify_alignment)
+        self.assertEqual(mapnik.Color("#ff0"), sym.format.halo_fill if (MAPNIK_VERSION >= 200100) else sym.halo_fill)
+        self.assertEqual(2, sym.format.halo_radius if (MAPNIK_VERSION >= 200100) else sym.halo_radius)
         
-        if MAPNIK_VERSION >= 20000:
+        if MAPNIK_VERSION >= 200100:
+            # TextSymbolizer lost its "name" attribute in Mapnik 2.1.
+            pass
+        elif MAPNIK_VERSION >= 200001:
             self.assertEqual('[NAME]', str(sym.name))
         else:
             self.assertEqual('NAME', sym.name)
         
-        self.assertEqual(12, sym.text_size)
-        self.assertEqual(100, sym.wrap_width)
-        self.assertEqual(50, sym.label_spacing)
-        self.assertEqual(25, sym.label_position_tolerance)
-        self.assertEqual(10, sym.max_char_angle_delta)
-        self.assertEqual(10, sym.line_spacing)
-        self.assertEqual(5, sym.minimum_distance)
-        self.assertEqual(mapnik.label_placement.LINE_PLACEMENT, sym.label_placement)
+        self.assertEqual(12, sym.format.text_size if (MAPNIK_VERSION >= 200100) else sym.text_size)
+        self.assertEqual(100, sym.properties.wrap_width if (MAPNIK_VERSION >= 200100) else sym.wrap_width)
+        self.assertEqual(50, sym.properties.label_spacing if (MAPNIK_VERSION >= 200100) else sym.label_spacing)
+        self.assertEqual(25, sym.properties.label_position_tolerance if (MAPNIK_VERSION >= 200100) else sym.label_position_tolerance)
+        
+        if MAPNIK_VERSION >= 200100:
+            # Seriously?
+            self.assertEqual(10, sym.properties.maximum_angle_char_delta if (MAPNIK_VERSION >= 200100) else sym.maximum_angle_char_delta)
+        else:
+            self.assertEqual(10, sym.max_char_angle_delta)
+        
+        self.assertEqual(10, sym.format.line_spacing if (MAPNIK_VERSION >= 200100) else sym.line_spacing)
+        self.assertEqual(5, sym.properties.minimum_distance if (MAPNIK_VERSION >= 200100) else sym.minimum_distance)
+        self.assertEqual(mapnik.label_placement.LINE_PLACEMENT, sym.properties.label_placement if (MAPNIK_VERSION >= 200100) else sym.label_placement)
     
     def testCompile7(self):
         s = """
@@ -2373,17 +2383,126 @@ layer_srs=%(other_srs)s
         line_rule = line_rules[0]
         
         self.assertEqual(1, len(line_rules))
-        self.assertEqual(50000, line_rule.minscale.value)
-        self.assertEqual(99999, line_rule.maxscale.value)
+        self.assertEqual(51070, line_rule.minscale.value)
+        self.assertEqual(102139, line_rule.maxscale.value)
         self.assertEqual(2, line_rule.symbolizers[0].width)
 
         text_rules = get_text_rule_groups(declarations).get('name', [])
         text_rule = text_rules[0]
         
         self.assertEqual(1, len(text_rules))
-        self.assertEqual(50000, text_rule.minscale.value)
-        self.assertEqual(99999, text_rule.maxscale.value)
+        self.assertEqual(51070, text_rule.minscale.value)
+        self.assertEqual(102139, text_rule.maxscale.value)
         self.assertEqual(24, text_rule.symbolizers[0].size)
+
+    def testCompile9(self):
+        s = u"""
+            Layer NAME
+            {
+                text-face-name: 'Helvetica', 'DejaVu Sans Book';
+                text-fill: #f00;
+                text-size: 12;
+            }
+        """
+        if MAPNIK_VERSION < 200100:
+            # Mapnik only supports multiple font face names as of version 2.1
+            return
+        
+        declarations = stylesheet_declarations(s, is_merc=True)
+        text_rule_groups = get_text_rule_groups(declarations)
+        
+        symbolizer = text_rule_groups['NAME'][0].symbolizers[0]
+        fontsets = {symbolizer.get_fontset_name(): output.FontSet(symbolizer.face_name.values).to_mapnik()}
+        sym = text_rule_groups['NAME'][0].symbolizers[0].to_mapnik(fontsets)
+        
+        self.assertEqual(mapnik.Color("#f00"), sym.format.fill if (MAPNIK_VERSION >= 200100) else sym.fill)
+        self.assertEqual(12, sym.format.text_size if (MAPNIK_VERSION >= 200100) else sym.text_size)
+
+        # TODO: test for output of FontSet in text symbolizer when Mapnik
+        # adds support. See also https://github.com/mapnik/mapnik/issues/1483
+
+    def testCompile10(self):
+        """
+        """
+        s = """<?xml version="1.0"?>
+            <Map>
+                <Stylesheet>
+                    Map { map-bgcolor: #fff; }
+                    
+                    Layer name
+                    {
+                        text-face-name: 'Comic Sans', 'Papyrus';
+                        text-size: 14;
+                        text-fill: #f90;
+                    }
+                </Stylesheet>
+                <Datasource name="template">
+                     <Parameter name="type">shape</Parameter>
+                     <Parameter name="encoding">latin1</Parameter>
+                </Datasource>
+                <Layer>
+                    <Datasource base="template">
+                        <Parameter name="type">shape</Parameter>
+                        <Parameter name="file">%(data)s/test.shp</Parameter>
+                    </Datasource>
+                </Layer>
+            </Map>
+        """ % self.__dict__
+
+        map = compile(s, self.dirs)
+        mmap = mapnik.Map(640, 480)
+        
+        map.to_mapnik(mmap)
+        
+        (handle, path) = tempfile.mkstemp(suffix='.xml', prefix='cascadenik-mapnik-')
+        os.close(handle)
+        
+        mapnik.save_map(mmap, path)
+        doc = xml.etree.ElementTree.parse(path)
+        map_el = doc.getroot()
+        
+        self.assertEqual(len(map_el.find("Layer").findall('Datasource')), 1)
+        params = dict(((p.get('name'), p.text) for p in map_el.find('Layer').find('Datasource').findall('Parameter')))
+        self.assertEqual(params['type'], 'shape')
+        self.assertTrue(params['file'].endswith('%s/test.shp' % self.data))
+        self.assertEqual(params['encoding'], 'latin1')
+        
+        if MAPNIK_VERSION < 200100:
+            # Mapnik only supports multiple font face names as of version 2.1
+            textsym_el = map_el.find('Style').find('Rule').find('TextSymbolizer')
+
+            if MAPNIK_VERSION >= 200000:
+                # It changed as of 2.0.
+                self.assertEqual('Comic Sans', textsym_el.get('face-name'))
+            else:
+                self.assertEqual('Comic Sans', textsym_el.get('face_name'))
+
+            return
+        
+        fontset_el = map_el.find('FontSet')
+
+        self.assertEqual('Comic Sans', fontset_el.findall('Font')[0].get('face-name'))
+        self.assertEqual('Papyrus', fontset_el.findall('Font')[1].get('face-name'))
+        
+        if MAPNIK_VERSION >= 200101:
+            # Ensure that the fontset-name made it out,
+            # see also https://github.com/mapnik/mapnik/issues/1483
+            textsym_el = map_el.find('Style').find('Rule').find('TextSymbolizer')
+            self.assertEqual(fontset_el.get('name'), textsym_el.get('fontset-name'))
+
+    def testCompile11(self):
+        """
+        """
+        s = """<?xml version="1.0"?>
+            <Map>
+                <Stylesheet>
+                    Map { map-bgcolor: #fff; }
+                </Stylesheet>
+            </Map>
+        """
+        map = compile(s, self.dirs, user_styles=['http://cascadenik-sampledata.s3.amazonaws.com/black-bgcolor.css'])
+        
+        self.assertEqual(str(map.background), '#000000')
 
 class RelativePathTests(unittest.TestCase):
 
