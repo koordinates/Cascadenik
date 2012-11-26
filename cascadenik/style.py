@@ -13,7 +13,7 @@ class color:
         return repr(self)
 
     def __eq__(self, other):
-        return self.channels == other.channels
+        return repr(self) == repr(other)
 
 class color_transparent(color):
     pass
@@ -29,7 +29,10 @@ class color_rgba(color):
 
     def __repr__(self):
         if(self.name == None):
-            return '#%02x%02x%02x%02x' % self.channels
+            if self.channels[-1] == 255:
+                return '#%02x%02x%02x' % self.channels[:3]
+            else:
+                return '#%02x%02x%02x%02x' % self.channels
         else:
             return self.name
 
